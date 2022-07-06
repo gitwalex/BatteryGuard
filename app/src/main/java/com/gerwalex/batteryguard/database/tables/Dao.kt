@@ -17,4 +17,7 @@ abstract class Dao(val db: DB) {
 
     @Query("Select * from event order by time desc")
     abstract fun getEventList(): Cursor
+
+    @Query("select * from event group by time having max(time)")
+    abstract fun getLastEvent(): Event?
 }

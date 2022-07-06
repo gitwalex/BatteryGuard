@@ -1,13 +1,9 @@
 package com.gerwalex.batteryguard.system
 
-import android.appwidget.AppWidgetManager
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.BatteryManager
 import android.util.Log
-import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.databinding.Observable
 import androidx.databinding.Observable.OnPropertyChangedCallback
@@ -17,15 +13,13 @@ import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.enums.BatteryEvent
-import com.gerwalex.batteryguard.enums.BatteryStatus
-import com.gerwalex.batteryguard.widget.BatteryGuardWidgetProvider
 import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
 
-class BatteryObserverWorker(context: Context, parameters: WorkerParameters) :
+class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
     CoroutineWorker(context, parameters) {
 
-    //Callback fur Properties, die vom GueardReceiver gesetzt werden
+    //Callback fur Properties, die vom GuardReceiver gesetzt werden
     private val callback = object : OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
             if (IS_AC_PLUGGED.get() || IS_SCREEN_ON.get()) {
@@ -40,20 +34,35 @@ class BatteryObserverWorker(context: Context, parameters: WorkerParameters) :
             }
         }
     }
-    private val appWidgetManager = AppWidgetManager.getInstance(context)
-    private val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
     private var job: Job? = null
     private var lastEvent: Event? = null
+    private var context: Context
 
     init {
-        PreferenceManager
-            .getDefaultSharedPreferences(context)
-            .edit()
-            .putBoolean(SERVICE_REQUIRED, true)
-            .apply()
+        this.context = context
         IS_SCREEN_ON.set(true)// Screen ist eingeschaltet, wenn Service startet, da Interaktion mit User oder Reboot
         IS_SCREEN_ON.addOnPropertyChangedCallback(callback)
         IS_AC_PLUGGED.addOnPropertyChangedCallback(callback)
+    }
+
+    override suspend fun doWork(): Result {
+        setForeground(createForegroundInfo())
+
+        try {
+            register(applicationContext)
+            job = startJob()
+            val event = getEvent(context, BatteryEvent.ServiceStarted)
+            event?.let {
+                it.insert()
+                IS_AC_PLUGGED.set(it.isCharging)
+                BatteryWidgetUpdateWorker.startUpdateWidget(context, event)
+            }
+            awaitCancellation()
+        } catch (e: CancellationException) {
+            getEvent(context, BatteryEvent.ServiceCancelled)?.insert()
+            e.printStackTrace()
+        }
+        return Result.success()
     }
 
     private fun createForegroundInfo(): ForegroundInfo {
@@ -80,47 +89,7 @@ class BatteryObserverWorker(context: Context, parameters: WorkerParameters) :
         return ForegroundInfo(R.id.observeBatteryService, notification)
     }
 
-    private fun startJob(): Job {
-        return CoroutineScope(Dispatchers.IO).launch {
-            while (true) {
-                delay(TimeUnit.MINUTES.toMillis(SCREEN_ON_DELAY_IN_MINUTES.toLong()))
-                val event = newEvent(BatteryEvent.ServiceStatus, applicationContext)
-                event?.let {
-                    if (it != lastEvent) {
-                        it.insert()
-                        lastEvent = event
-                        updateWidgets(applicationContext)
-                    }
-                }
-            }
-        }
-    }
-
-    private fun updateWidgets(context: Context) {
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetProvider)
-        if (appWidgetIds.isNotEmpty()) {
-            val views = RemoteViews(context.packageName, R.layout.appwidget_provider_layout)
-            appWidgetManager.updateAppWidget(appWidgetIds, views)
-        }
-    }
-
-    override suspend fun doWork(): Result {
-        setForeground(createForegroundInfo())
-
-        try {
-            register(applicationContext)
-            job = startJob()
-            newEvent(BatteryEvent.ServiceStarted, applicationContext)?.insert()
-            updateWidgets(applicationContext)
-            awaitCancellation()
-        } catch (e: CancellationException) {
-            newEvent(BatteryEvent.ServiceCancelled, applicationContext)?.insert()
-            e.printStackTrace()
-        }
-        return Result.success()
-    }
-
-    fun register(context: Context) {
+    private fun register(context: Context) {
         val inf = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_LOW)
             addAction(Intent.ACTION_BATTERY_OKAY)
@@ -129,8 +98,23 @@ class BatteryObserverWorker(context: Context, parameters: WorkerParameters) :
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
         }
-        context.registerReceiver(BatteryGuardWidgetProvider(), inf)
-        Log.d("gerwalex", "BatteryGuardReceiver registered!")
+        context.registerReceiver(BatteryBroadcastReceiver(), inf)
+        Log.d("gerwalex", "BatteryBroadcastReceiver registered!")
+    }
+
+    private fun startJob(): Job {
+        return CoroutineScope(Dispatchers.IO).launch {
+            while (true) {
+                delay(TimeUnit.MINUTES.toMillis(SCREEN_ON_DELAY_IN_MINUTES.toLong()))
+                getEvent(context, BatteryEvent.ServiceStatus)?.let {
+                    if (it != lastEvent) {
+                        it.insert()
+                        lastEvent = it
+                        BatteryWidgetUpdateWorker.startUpdateWidget(context, it)
+                    }
+                }
+            }
+        }
     }
 
     companion object {
@@ -141,35 +125,28 @@ class BatteryObserverWorker(context: Context, parameters: WorkerParameters) :
         val IS_AC_PLUGGED = ObservableBoolean(false)
 
         @JvmStatic
+        fun getEvent(context: Context, event: BatteryEvent): Event? {
+            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+                context.registerReceiver(null, ifilter)
+            }
+            batteryStatus?.let { intent ->
+                return Event(event, batteryStatus)
+            }
+            return null
+        }
+
+        @JvmStatic
         fun startService(context: Context) {
             val prefs = PreferenceManager.getDefaultSharedPreferences(context)
             if (prefs.getBoolean(SERVICE_REQUIRED, false)) {
                 // Service nur starten, wenn benötigt
                 val request = OneTimeWorkRequest
-                    .Builder(BatteryObserverWorker::class.java)
+                    .Builder(BatteryWorkerService::class.java)
                     .build()
                 WorkManager
                     .getInstance(context)
-                    .enqueueUniqueWork("BatteryObserveWorker", ExistingWorkPolicy.REPLACE, request)
+                    .enqueueUniqueWork("BatteryWorkerService", ExistingWorkPolicy.KEEP, request)
             }
-        }
-
-        @JvmStatic
-        fun newEvent(event: BatteryEvent, context: Context): Event? {
-            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-                context.registerReceiver(null, ifilter)
-            }
-            batteryStatus?.let {
-                val status: BatteryStatus = when (it.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
-                    BatteryManager.BATTERY_STATUS_CHARGING -> BatteryStatus.Status_Charging
-                    else -> BatteryStatus.Status_Discharging
-                }
-                val level = it.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-                val scale = it.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-                val chargeLevel = level * 100 / scale.toFloat()
-                return Event(event, status, chargeLevel)
-            }
-            return null
         }
     }
 }
