@@ -15,8 +15,9 @@ import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.enums.BatteryEvent
 import kotlinx.coroutines.*
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
-class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
+class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
     CoroutineWorker(context, parameters) {
 
     //Callback fur Properties, die vom GuardReceiver gesetzt werden
@@ -34,12 +35,13 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
             }
         }
     }
+    private val maxDelay = TimeUnit.MINUTES.toMillis(MAX_DELAY_IN_MINUTES.toLong())
+    private val minDelay = TimeUnit.MINUTES.toMillis(MIN_DELAY_IN_MINUTES.toLong())
+    private val random = Random.Default
     private var job: Job? = null
     private var lastEvent: Event? = null
-    private var context: Context
 
     init {
-        this.context = context
         IS_SCREEN_ON.set(true)// Screen ist eingeschaltet, wenn Service startet, da Interaktion mit User oder Reboot
         IS_SCREEN_ON.addOnPropertyChangedCallback(callback)
         IS_AC_PLUGGED.addOnPropertyChangedCallback(callback)
@@ -89,6 +91,10 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
         return ForegroundInfo(R.id.observeBatteryService, notification)
     }
 
+    private fun getDelay(): Long {
+        return random.nextLong(maxDelay - minDelay) + minDelay
+    }
+
     private fun register(context: Context) {
         val inf = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_LOW)
@@ -105,7 +111,7 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
     private fun startJob(): Job {
         return CoroutineScope(Dispatchers.IO).launch {
             while (true) {
-                delay(TimeUnit.MINUTES.toMillis(SCREEN_ON_DELAY_IN_MINUTES.toLong()))
+                delay(getDelay())
                 getEvent(context, BatteryEvent.ServiceStatus)?.let {
                     if (it != lastEvent) {
                         it.insert()
@@ -120,7 +126,8 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
     companion object {
 
         const val SERVICE_REQUIRED = "SERVICE_REQUIRED"
-        const val SCREEN_ON_DELAY_IN_MINUTES = 1
+        const val MIN_DELAY_IN_MINUTES = 1
+        const val MAX_DELAY_IN_MINUTES = 5
         val IS_SCREEN_ON = ObservableBoolean(true)
         val IS_AC_PLUGGED = ObservableBoolean(false)
 

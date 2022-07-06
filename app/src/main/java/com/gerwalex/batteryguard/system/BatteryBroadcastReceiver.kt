@@ -22,33 +22,33 @@ class BatteryBroadcastReceiver : BroadcastReceiver() {
                 val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
                     context.registerReceiver(null, ifilter)
                 }
-                batteryStatus?.let { intent ->
+                batteryStatus?.let {
                     when (intent.action) {
                         Intent.ACTION_BOOT_COMPLETED -> {
                             BatteryWorkerService.startService(context)
-                            event = Event(BatteryEvent.Boot_Completed, batteryStatus)
+                            event = Event(BatteryEvent.Boot_Completed, it)
                         }
                         Intent.ACTION_SCREEN_OFF -> {
-                            event = Event(BatteryEvent.ScreenOff, batteryStatus)
+                            event = Event(BatteryEvent.ScreenOff, it)
                             BatteryWorkerService.IS_SCREEN_ON.set(false)
                         }
                         Intent.ACTION_SCREEN_ON -> {
-                            event = Event(BatteryEvent.ScreenOn, batteryStatus)
+                            event = Event(BatteryEvent.ScreenOn, it)
                             BatteryWorkerService.IS_SCREEN_ON.set(true)
                         }
                         Intent.ACTION_POWER_CONNECTED -> {
-                            event = Event(BatteryEvent.Plugged_AC, batteryStatus)
+                            event = Event(BatteryEvent.Plugged_AC, it)
                             BatteryWorkerService.IS_AC_PLUGGED.set(true)
                         }
                         Intent.ACTION_POWER_DISCONNECTED -> {
-                            event = Event(BatteryEvent.UnPlugged, batteryStatus)
+                            event = Event(BatteryEvent.UnPlugged, it)
                             BatteryWorkerService.IS_AC_PLUGGED.set(false)
                         }
                         Intent.ACTION_BATTERY_LOW -> {
-                            event = Event(BatteryEvent.Battery_Low, batteryStatus)
+                            event = Event(BatteryEvent.Battery_Low, it)
                         }
                         Intent.ACTION_BATTERY_OKAY -> {
-                            event = Event(BatteryEvent.Battery_Ok, batteryStatus)
+                            event = Event(BatteryEvent.Battery_Ok, it)
                         }
                         else -> {
                         }
