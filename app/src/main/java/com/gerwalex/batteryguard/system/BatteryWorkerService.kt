@@ -13,33 +13,33 @@ import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.enums.BatteryEvent
-import kotlinx.coroutines.*
-import java.util.concurrent.TimeUnit
-import kotlin.random.Random
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.awaitCancellation
 
 class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
     CoroutineWorker(context, parameters) {
+
+    private val batteryReceiver = BatteryBroadcastReceiver()
+    private var plugReceiverRegistered: Boolean = false
 
     //Callback fur Properties, die vom GuardReceiver gesetzt werden
     private val callback = object : OnPropertyChangedCallback() {
         override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
             if (IS_AC_PLUGGED.get() || IS_SCREEN_ON.get()) {
-                if (job == null) {
-                    job = startJob()
+                if (!plugReceiverRegistered) {
+                    plugReceiverRegistered = true
+                    registerPlugInReceiver(context, plugReceiverRegistered)
                 }
             } else {
-                job?.let {
-                    it.cancel()
-                    job = null
-                }
+                plugReceiverRegistered = false
+                registerPlugInReceiver(context, plugReceiverRegistered)
             }
         }
     }
-    private val maxDelay = TimeUnit.MINUTES.toMillis(MAX_DELAY_IN_MINUTES.toLong())
-    private val minDelay = TimeUnit.MINUTES.toMillis(MIN_DELAY_IN_MINUTES.toLong())
-    private val random = Random.Default
-    private var job: Job? = null
-    private var lastEvent: Event? = null
+    private val plugReceiver = BatteryBroadcastReceiver()
+    private val plugFilter = IntentFilter().apply {
+        addAction(Intent.ACTION_BATTERY_CHANGED)
+    }
 
     init {
         IS_SCREEN_ON.set(true)// Screen ist eingeschaltet, wenn Service startet, da Interaktion mit User oder Reboot
@@ -52,7 +52,6 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
 
         try {
             register(applicationContext)
-            job = startJob()
             val event = getEvent(context, BatteryEvent.ServiceStarted)
             event?.let {
                 it.insert()
@@ -62,6 +61,8 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
             awaitCancellation()
         } catch (e: CancellationException) {
             getEvent(context, BatteryEvent.ServiceCancelled)?.insert()
+            context.unregisterReceiver(batteryReceiver)
+            registerPlugInReceiver(context, !plugReceiverRegistered)
             e.printStackTrace()
         }
         return Result.success()
@@ -91,10 +92,6 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
         return ForegroundInfo(R.id.observeBatteryService, notification)
     }
 
-    private fun getDelay(): Long {
-        return random.nextLong(maxDelay - minDelay) + minDelay
-    }
-
     private fun register(context: Context) {
         val inf = IntentFilter().apply {
             addAction(Intent.ACTION_BATTERY_LOW)
@@ -104,30 +101,22 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
         }
-        context.registerReceiver(BatteryBroadcastReceiver(), inf)
+        context.registerReceiver(batteryReceiver, inf)
         Log.d("gerwalex", "BatteryBroadcastReceiver registered!")
     }
 
-    private fun startJob(): Job {
-        return CoroutineScope(Dispatchers.IO).launch {
-            while (true) {
-                delay(getDelay())
-                getEvent(context, BatteryEvent.ServiceStatus)?.let {
-                    if (it != lastEvent) {
-                        it.insert()
-                        lastEvent = it
-                        BatteryWidgetUpdateWorker.startUpdateWidget(context, it)
-                    }
-                }
-            }
+    private fun registerPlugInReceiver(context: Context, register: Boolean) {
+        if (register) {
+            context.registerReceiver(plugReceiver, plugFilter)
+        } else {
+            context.unregisterReceiver(plugReceiver)
         }
+        Log.d("gerwalex", "PlugInReceiver registered: $register")
     }
 
     companion object {
 
         const val SERVICE_REQUIRED = "SERVICE_REQUIRED"
-        const val MIN_DELAY_IN_MINUTES = 1
-        const val MAX_DELAY_IN_MINUTES = 5
         val IS_SCREEN_ON = ObservableBoolean(true)
         val IS_AC_PLUGGED = ObservableBoolean(false)
 
@@ -137,7 +126,7 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
                 context.registerReceiver(null, ifilter)
             }
             batteryStatus?.let { intent ->
-                return Event(event, batteryStatus)
+                return Event(event, intent)
             }
             return null
         }

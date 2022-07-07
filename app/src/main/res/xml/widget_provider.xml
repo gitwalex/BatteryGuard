@@ -1,16 +1,8 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="40dp"
-    android:minHeight="40dp"
-    android:targetCellWidth="1"
-    android:targetCellHeight="1"
-    android:maxResizeWidth="250dp"
-    android:maxResizeHeight="120dp"
-    android:updatePeriodMillis="86400000"
-    android:description="@string/appwidget_description"
-    android:previewLayout="@layout/appwidget_preview"
-    android:initialLayout="@layout/loading_appwidget"
     android:configure="com.gerwalex.batteryguard.widget.AppWidgetConfigurationActivity"
-    android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen"
-    android:widgetFeatures="reconfigurable|configuration_optional">
-</appwidget-provider>
+    android:description="@string/appwidget_description"
+    android:initialLayout="@layout/loading_appwidget"
+    android:minWidth="@dimen/widgetSize"
+    android:minHeight="@dimen/widgetSize"
+    android:previewLayout="@layout/appwidget_preview"
+    android:widgetCategory="home_screen" />

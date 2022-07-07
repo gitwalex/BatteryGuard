@@ -10,6 +10,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.databinding.ActivityMainBinding
+import com.gerwalex.batteryguard.system.BatteryWorkerService
 import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity() {
@@ -18,6 +19,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BatteryWorkerService.startService(this)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

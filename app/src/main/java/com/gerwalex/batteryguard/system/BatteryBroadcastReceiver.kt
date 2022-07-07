@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 
 class BatteryBroadcastReceiver : BroadcastReceiver() {
 
+    private var lastEvent: Event? = null
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("gerwalex", "Broadcast received: ${intent.action}")
         val pending = goAsync()
@@ -44,6 +45,9 @@ class BatteryBroadcastReceiver : BroadcastReceiver() {
                             event = Event(BatteryEvent.UnPlugged, it)
                             BatteryWorkerService.IS_AC_PLUGGED.set(false)
                         }
+                        Intent.ACTION_BATTERY_CHANGED -> {
+                            event = Event(BatteryEvent.Battery_Changed, intent)
+                        }
                         Intent.ACTION_BATTERY_LOW -> {
                             event = Event(BatteryEvent.Battery_Low, it)
                         }
@@ -54,8 +58,11 @@ class BatteryBroadcastReceiver : BroadcastReceiver() {
                         }
                     }
                     event?.run {
-                        insert()
-                        BatteryWidgetUpdateWorker.startUpdateWidget(context, this)
+                        if (event != lastEvent) {
+                            lastEvent = event
+                            insert()
+                            BatteryWidgetUpdateWorker.startUpdateWidget(context, this)
+                        }
                     }
                 }
             } finally {

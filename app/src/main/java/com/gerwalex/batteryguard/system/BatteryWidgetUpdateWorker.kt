@@ -25,7 +25,7 @@ class BatteryWidgetUpdateWorker(val context: Context, parameters: WorkerParamete
     val mainPaint = Paint()
     val backgroundPaint = Paint()
     val margin: Int
-    val charging = parameters.inputData.getBoolean(CHARGING, false)
+    val isCharging = parameters.inputData.getBoolean(CHARGING, false)
     val level = parameters.inputData.getFloat(LEVEL, 0f)
 
     init {
@@ -36,7 +36,7 @@ class BatteryWidgetUpdateWorker(val context: Context, parameters: WorkerParamete
             .dpToPx()
             .toFloat()
         backgroundPaint.isAntiAlias = true
-        backgroundPaint.color = ContextCompat.getColor(context, R.color.white)
+        backgroundPaint.color = ContextCompat.getColor(context, android.R.color.darker_gray)
         backgroundPaint.style = Paint.Style.STROKE
         backgroundPaint.strokeWidth = 5
             .dpToPx()
@@ -45,7 +45,7 @@ class BatteryWidgetUpdateWorker(val context: Context, parameters: WorkerParamete
     }
 
     override suspend fun doWork(): Result {
-        Log.d("gerwalex", "WidgetUpdate: level: $level, charging: $charging")
+        Log.d("gerwalex", "WidgetUpdateWorker: level: $level, charging: $isCharging")
         updateWidget(context)
         return Result.success()
     }
@@ -54,6 +54,16 @@ class BatteryWidgetUpdateWorker(val context: Context, parameters: WorkerParamete
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetProvider)
+        if (isCharging) {
+            mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_blue_light)
+        } else {
+            when (level.toInt()) {
+                in 0..30 -> mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_red_light)
+                in 31..50 -> mainPaint.color =
+                    ContextCompat.getColor(context, android.R.color.holo_orange_light)
+                else -> mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_green_light)
+            }
+        }
         appWidgetIds.forEach { appWidgetId ->
             // Create an Intent to launch ExampleActivity.
             val pendingIntent: PendingIntent = PendingIntent.getActivity(
@@ -82,6 +92,7 @@ class BatteryWidgetUpdateWorker(val context: Context, parameters: WorkerParamete
     }
 
     private fun getWidgetSize(): Pair<Int, Int> {
+        val size = context.resources.getDimension(R.dimen.widgetSize)
         return Pair(40.dpToPx(), 40.dpToPx())
     }
 
