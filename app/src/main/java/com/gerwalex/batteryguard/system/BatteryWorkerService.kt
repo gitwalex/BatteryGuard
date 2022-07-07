@@ -116,6 +116,7 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
 
     companion object {
 
+        private val SERVICENAME = "BatteryWorkerService"
         const val SERVICE_REQUIRED = "SERVICE_REQUIRED"
         val IS_SCREEN_ON = ObservableBoolean(true)
         val IS_AC_PLUGGED = ObservableBoolean(false)
@@ -132,6 +133,13 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
         }
 
         @JvmStatic
+        fun stopService(context: Context) {
+            WorkManager
+                .getInstance(context)
+                .cancelUniqueWork(SERVICENAME)
+        }
+
+        @JvmStatic
         fun startService(context: Context) {
             val prefs = PreferenceManager.getDefaultSharedPreferences(context)
             if (prefs.getBoolean(SERVICE_REQUIRED, false)) {
@@ -141,7 +149,7 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
                     .build()
                 WorkManager
                     .getInstance(context)
-                    .enqueueUniqueWork("BatteryWorkerService", ExistingWorkPolicy.KEEP, request)
+                    .enqueueUniqueWork(SERVICENAME, ExistingWorkPolicy.KEEP, request)
             }
         }
     }

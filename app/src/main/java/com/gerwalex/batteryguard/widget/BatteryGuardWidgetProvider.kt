@@ -34,12 +34,14 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
+        BatteryWorkerService.stopService(context)
         PreferenceManager
             .getDefaultSharedPreferences(context)
             .edit()
             .putBoolean(BatteryWorkerService
                 .SERVICE_REQUIRED, false)
             .apply()
+        Log.d("gerwalex", "GuardWidgetProvider disabled")
     }
 
     override fun onEnabled(context: Context) {
@@ -50,5 +52,6 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
             .putBoolean(BatteryWorkerService
                 .SERVICE_REQUIRED, true)
             .apply()
+        Log.d("gerwalex", "GuardWidgetProvider enabled")
     }
 }
