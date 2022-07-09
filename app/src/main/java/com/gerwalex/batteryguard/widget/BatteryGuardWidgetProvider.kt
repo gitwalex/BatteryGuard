@@ -9,7 +9,7 @@ import android.util.Log
 import androidx.preference.PreferenceManager
 import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.enums.BatteryEvent
-import com.gerwalex.batteryguard.system.BatteryWidgetUpdateWorker
+import com.gerwalex.batteryguard.system.BatteryWidgetUpdater
 import com.gerwalex.batteryguard.system.BatteryWorkerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -18,17 +18,21 @@ import kotlinx.coroutines.launch
 class BatteryGuardWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-// Perform this loop procedure for each widget that belongs to this
-        // provider.
-        CoroutineScope(Dispatchers.IO).launch {
-            Log.d("gerwalex", "GuardWidgetProvider")
-            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-                context.registerReceiver(null, ifilter)
+        val pending = goAsync()
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                Log.d("gerwalex", "GuardWidgetProvider")
+                val appWidgetUpdater = BatteryWidgetUpdater(context)
+                val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+                    context.registerReceiver(null, ifilter)
+                }
+                batteryStatus?.let { intent ->
+                    val event = Event(BatteryEvent.UpdateWidget, intent)
+                    appWidgetUpdater.updateWidget(event.level, event.isCharging)
+                }
             }
-            batteryStatus?.let { intent ->
-                val event = Event(BatteryEvent.UpdateWidget, intent)
-                BatteryWidgetUpdateWorker.startUpdateWidget(context, event)
-            }
+        } finally {
+            pending.finish()
         }
     }
 
