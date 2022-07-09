@@ -5,35 +5,36 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.databinding.Observable
-import androidx.databinding.Observable.OnPropertyChangedCallback
-import androidx.databinding.ObservableBoolean
+import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
-import com.gerwalex.batteryguard.enums.BatteryEvent
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.*
 
 class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
     CoroutineWorker(context, parameters) {
 
+    private val appWidgetUpdater = BatteryWidgetUpdater(context)
     private val batteryReceiver = BatteryBroadcastReceiver()
     private var plugReceiverRegistered: Boolean = false
-
-    //Callback fur Properties, die vom GuardReceiver gesetzt werden
-    private val callback = object : OnPropertyChangedCallback() {
-        override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
-            if (IS_AC_PLUGGED.get() || IS_SCREEN_ON.get()) {
-                if (!plugReceiverRegistered) {
-                    plugReceiverRegistered = true
-                    registerPlugInReceiver(context, plugReceiverRegistered)
-                }
-            } else {
-                plugReceiverRegistered = false
+    private val observeStatus = Observer<Boolean> {
+        if (batteryReceiver.isScreenOn.value == true || batteryReceiver.isCharging.value == true) {
+            if (!plugReceiverRegistered) {
+                plugReceiverRegistered = true
                 registerPlugInReceiver(context, plugReceiverRegistered)
             }
+        } else {
+            plugReceiverRegistered = false
+            registerPlugInReceiver(context, plugReceiverRegistered)
+        }
+    }
+    private val observeEvent = Observer<Event> { event ->
+        MainScope().launch {
+            withContext(Dispatchers.IO) {
+                event.insert()
+            }
+            appWidgetUpdater.updateWidget(event.level, event.isCharging)
         }
     }
     private val plugReceiver = BatteryBroadcastReceiver()
@@ -42,9 +43,12 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
     }
 
     init {
-        IS_SCREEN_ON.set(true)// Screen ist eingeschaltet, wenn Service startet, da Interaktion mit User oder Reboot
-        IS_SCREEN_ON.addOnPropertyChangedCallback(callback)
-        IS_AC_PLUGGED.addOnPropertyChangedCallback(callback)
+        MainScope().launch {
+            batteryReceiver.isCharging.observeForever(observeStatus)
+            batteryReceiver.isScreenOn.observeForever(observeStatus)
+            batteryReceiver.currentEvent.observeForever(observeEvent)
+            plugReceiver.currentEvent.observeForever(observeEvent)
+        }
     }
 
     override suspend fun doWork(): Result {
@@ -52,15 +56,8 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
 
         try {
             register(applicationContext)
-            val event = getEvent(context, BatteryEvent.ServiceStarted)
-            event?.let {
-                it.insert()
-                IS_AC_PLUGGED.set(it.isCharging)
-                BatteryWidgetUpdateWorker.startUpdateWidget(context, event)
-            }
             awaitCancellation()
         } catch (e: CancellationException) {
-            getEvent(context, BatteryEvent.ServiceCancelled)?.insert()
             context.unregisterReceiver(batteryReceiver)
             registerPlugInReceiver(context, !plugReceiverRegistered)
             e.printStackTrace()
@@ -116,21 +113,8 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
 
     companion object {
 
-        private val SERVICENAME = "BatteryWorkerService"
+        const val SERVICENAME = "BatteryWorkerService"
         const val SERVICE_REQUIRED = "SERVICE_REQUIRED"
-        val IS_SCREEN_ON = ObservableBoolean(true)
-        val IS_AC_PLUGGED = ObservableBoolean(false)
-
-        @JvmStatic
-        fun getEvent(context: Context, event: BatteryEvent): Event? {
-            val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-                context.registerReceiver(null, ifilter)
-            }
-            batteryStatus?.let { intent ->
-                return Event(event, intent)
-            }
-            return null
-        }
 
         @JvmStatic
         fun stopService(context: Context) {
