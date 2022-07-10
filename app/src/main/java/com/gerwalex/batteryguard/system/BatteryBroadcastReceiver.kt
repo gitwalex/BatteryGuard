@@ -79,9 +79,6 @@ class BatteryBroadcastReceiver : BroadcastReceiver() {
                             event = Event(BatteryEvent.UnPlugged, it)
                             isCharging.postValue(false)
                         }
-                        Intent.ACTION_BATTERY_CHANGED -> {
-                            event = Event(BatteryEvent.Battery_Changed, intent)
-                        }
                         Intent.ACTION_BATTERY_LOW -> {
                             event = Event(BatteryEvent.Battery_Low, it)
                         }
@@ -89,6 +86,7 @@ class BatteryBroadcastReceiver : BroadcastReceiver() {
                             event = Event(BatteryEvent.Battery_Ok, it)
                         }
                         else -> {
+                            throw IllegalArgumentException("Fatal! Action ${intent.action} not expected")
                         }
                     }
                     event?.run {
