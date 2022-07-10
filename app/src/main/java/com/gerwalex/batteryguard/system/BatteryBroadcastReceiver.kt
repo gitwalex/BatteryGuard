@@ -14,9 +14,37 @@ import kotlinx.coroutines.launch
 
 class BatteryBroadcastReceiver : BroadcastReceiver() {
 
+    private val intentFilter = IntentFilter().apply {
+        addAction(Intent.ACTION_BATTERY_LOW)
+        addAction(Intent.ACTION_BATTERY_OKAY)
+        addAction(Intent.ACTION_POWER_CONNECTED)
+        addAction(Intent.ACTION_POWER_DISCONNECTED)
+        addAction(Intent.ACTION_SCREEN_ON)
+        addAction(Intent.ACTION_SCREEN_OFF)
+    }
     val currentEvent = MutableLiveData<Event>()
     val isScreenOn = MutableLiveData(true)
     val isCharging = MutableLiveData(false)
+    private var _isRegistered = false
+    val isRegistered: Boolean
+        get() {
+            return _isRegistered
+        }
+
+    fun register(context: Context) {
+        if (!isRegistered) {
+            context.registerReceiver(this, intentFilter)
+            _isRegistered = true
+        }
+    }
+
+    fun unregister(context: Context) {
+        if (isRegistered) {
+            context.unregisterReceiver(this)
+            _isRegistered = false
+        }
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("gerwalex", "Broadcast received: ${intent.action}")
         val pending = goAsync()

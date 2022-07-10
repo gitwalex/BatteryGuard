@@ -14,8 +14,9 @@
     <string name="appwidget_description">Widget Description</string>
     <string name="notification_channel_id">CHannelID</string>
     <string name="observeBattery">notificationProgress</string>
-    <string name="notification_title">NotificationTitle</string>
+    <string name="notification_title">Battery Guard aktiv</string>
     <string name="cancel_observeBattery">Cancel Observe Batttery</string>
     <string name="channel_name">BatteryGuardChannelName</string>
     <string name="channel_description">ChannelDescription</string>
+    <string name="observeBatteryProgress">Status: %1$s, (%2$.0f \%%)</string>
 </resources>

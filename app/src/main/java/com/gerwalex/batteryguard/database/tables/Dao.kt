@@ -10,7 +10,7 @@ import com.gerwalex.batteryguard.database.DB
 abstract class Dao(val db: DB) {
 
     @Insert
-    abstract fun insert(event: Event)
+    abstract fun insert(event: Event): Long
 
     @Query("select level from event group by time having max(time)")
     abstract fun getBatteryLevel(): Long
