@@ -2,54 +2,111 @@ package com.gerwalex.batteryguard.system
 
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.BatteryManager
-import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.preference.PreferenceManager
 import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
+import com.gerwalex.batteryguard.enums.BatteryEvent
 import kotlinx.coroutines.*
 
 class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
     CoroutineWorker(context, parameters) {
 
+    private var lastEvent: Event? = null
+    private var isScreenOn: Boolean = true // Beim Start ist der Bidschirm immer eingeschaltet
+    private var isCharging: Boolean = false
     private val notificationManager: NotificationManager by lazy {
-        applicationContext.getSystemService(Context
-            .NOTIFICATION_SERVICE) as NotificationManager
+        applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
     private val batteryManager: BatteryManager? by lazy {
-        applicationContext.getSystemService(Context
-            .BATTERY_SERVICE) as BatteryManager
+        applicationContext.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
     }
     private val channelID by lazy { applicationContext.getString(R.string.notification_channel_id) }
     private val appWidgetUpdater = BatteryWidgetUpdater(context)
-    private val batteryReceiver = BatteryBroadcastReceiver()
-    private val observeStatus = Observer<Boolean> {
-        if (batteryReceiver.isScreenOn.value == true || batteryReceiver.isCharging.value == true) {
-            batteryChangedObserver.register(context)
-        } else {
-            batteryChangedObserver.unregister(context)
-        }
-    }
-    private val observeEvent = Observer<Event> { event ->
+    private val batteryChangedObserver = BatteryChangeObserver(this)
+    private val batteryReceiver = BatteryBroadcastReceiver(this)
+    val broadcastIntent = MutableLiveData<Intent>()
+    private val observeBroadcastIntent = Observer<Intent> { intent ->
         MainScope().launch {
             withContext(Dispatchers.IO) {
-                batteryManager?.let {
-                    event.remaining = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
-                    event.capacity = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
-                    event.avg_current = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
-                    event.now_current = it.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
-                    event.remaining_nanowatt = it.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
-                    event.chargeTimeRemaining = it.computeChargeTimeRemaining()
+                val batteryIntent = if (intent.action == Intent.ACTION_BATTERY_CHANGED) {
+                    intent
+                } else {
+                    getBatteryIntent()
                 }
-                event.insert()
-                updateNotification(event)
+                var newEvent: Event? = null
+                batteryIntent?.let { it ->
+                    when (intent.action) {
+                        Intent.ACTION_SCREEN_OFF -> {
+//                            newEvent = Event(BatteryEvent.ScreenOff, it)
+                            isScreenOn = false
+//                            if (!isCharging) {
+//                                batteryChangedObserver.unregister(context)
+//                            }
+                        }
+                        Intent.ACTION_SCREEN_ON -> {
+//                            newEvent = Event(BatteryEvent.ScreenOn, it)
+                            isScreenOn = true
+//                            batteryChangedObserver.register(context)
+                        }
+                        Intent.ACTION_POWER_CONNECTED -> {
+//                            newEvent = Event(BatteryEvent.Plugged_AC, it)
+                            isCharging = true
+//                            batteryChangedObserver.register(context)
+                        }
+                        Intent.ACTION_POWER_DISCONNECTED -> {
+//                            newEvent = Event(BatteryEvent.UnPlugged, it)
+                            isCharging = false
+//                            if (!isScreenOn) {
+//                                batteryChangedObserver.unregister(context)
+//                            }
+                        }
+                        Intent.ACTION_BATTERY_LOW -> {
+//                            newEvent = Event(BatteryEvent.Battery_Low, it)
+                        }
+                        Intent.ACTION_BATTERY_OKAY -> {
+//                            newEvent = Event(BatteryEvent.Battery_Ok, it)
+                        }
+                        Intent.ACTION_BATTERY_CHANGED -> {
+                            newEvent = Event(BatteryEvent.Battery_Changed, it)
+                        }
+                        else -> {
+                            throw IllegalArgumentException("Fatal! Action ${intent.action} not expected")
+                        }
+                    }
+                    newEvent?.let { event ->
+                        batteryManager?.let { bm ->
+                            event.remaining = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+                            event.capacity = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+                            event.avg_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
+                            event.now_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+                            event.remaining_nanowatt =
+                                bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
+                            event.chargeTimeRemaining = bm.computeChargeTimeRemaining()
+                        }
+                        event.insert()
+                        lastEvent = event
+                    }
+                    lastEvent?.let {
+                        if (isScreenOn) {
+                            updateNotification(it)
+                            appWidgetUpdater.updateWidget(it.level, it.isCharging)
+                        }
+                    }
+                }
             }
-            if (batteryReceiver.isScreenOn.value == true) {
-                appWidgetUpdater.updateWidget(event.level, event.isCharging)
-            }
+        }
+    }
+
+    private fun getBatteryIntent(): Intent? {
+        return IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+            context.registerReceiver(null, ifilter)
         }
     }
 
@@ -67,23 +124,15 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
         notificationManager.notify(R.id.observeBatteryService, notification)
     }
 
-    private val batteryChangedObserver = BatteryChangeObserver()
-
-    init {
-        MainScope().launch {
-            batteryChangedObserver.register(context)
-            batteryReceiver.register(context)
-            batteryReceiver.isCharging.observeForever(observeStatus)
-            batteryReceiver.isScreenOn.observeForever(observeStatus)
-            batteryReceiver.currentEvent.observeForever(observeEvent)
-            batteryChangedObserver.currentEvent.observeForever(observeEvent)
-            Log.d("gerwalex", "BatteryBroadcastReceiver registered!")
-        }
-    }
-
     override suspend fun doWork(): Result {
         setForeground(createForegroundInfo())
         try {
+            withContext(Dispatchers.Main) {
+//                batteryChangedObserver.register(context)
+                batteryReceiver.register(context)
+                broadcastIntent.observeForever(observeBroadcastIntent)
+            }
+            broadcastIntent.postValue(getBatteryIntent())
             awaitCancellation()
         } catch (e: CancellationException) {
             batteryChangedObserver.unregister(context)
@@ -91,14 +140,6 @@ class BatteryWorkerService(val context: Context, parameters: WorkerParameters) :
             e.printStackTrace()
         }
         return Result.success()
-    }
-
-    private fun createBasicNotification(title: String, progress: String): NotificationCompat.Builder {
-        return NotificationCompat
-            .Builder(applicationContext, channelID)
-            .setContentTitle(title)
-            .setTicker(title)
-            .setContentText(progress)
     }
 
     private fun createForegroundInfo(): ForegroundInfo {
