@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.os.BatteryManager
 import android.util.Log
 import androidx.annotation.DrawableRes
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
@@ -16,6 +17,7 @@ import com.gerwalex.lib.database.ObservableTableRow
 @Entity
 class Event : ObservableTableRow {
 
+    @ColumnInfo(name = "_id")
     @PrimaryKey(autoGenerate = true)
     var id: Long? = null
         set(value) {
@@ -27,7 +29,9 @@ class Event : ObservableTableRow {
     val isCharging: Boolean
         get() {
             return when (status) {
-                BatteryStatus.Status_Charging -> true
+                BatteryStatus.Status_Full,
+                BatteryStatus.Status_Charging,
+                -> true
                 else -> false
             }
         }
@@ -45,7 +49,7 @@ class Event : ObservableTableRow {
     /**
      * Timestamp of event
      */
-    val time: Long
+    val ts: Long
 
     /**
      * Remaining battery capacity as an integer percentage of total capacity (with no fractional part).
@@ -111,7 +115,7 @@ class Event : ObservableTableRow {
     @DrawableRes
     var icon: Int = android.R.drawable.ic_lock_idle_low_battery
 
-    constructor(event: BatteryEvent, batteryStatus: Intent) {
+    constructor(event: BatteryEvent, batteryStatus: Intent, batteryManager: BatteryManager?) {
         this.event = event
         status = when (batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
             BatteryManager.BATTERY_STATUS_CHARGING -> BatteryStatus.Status_Charging
@@ -121,7 +125,7 @@ class Event : ObservableTableRow {
         val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         this.level = level * 100 / scale.toFloat()
-        time = System.currentTimeMillis()
+        ts = System.currentTimeMillis()
         this.icon =
             batteryStatus.getIntExtra(BatteryManager.EXTRA_ICON_SMALL, android.R.drawable.ic_lock_idle_low_battery)
         temperature = batteryStatus.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1)
@@ -129,6 +133,14 @@ class Event : ObservableTableRow {
         technology = batteryStatus.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY)
         health = batteryStatus.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)
         battery_low = batteryStatus.getBooleanExtra(BatteryManager.EXTRA_BATTERY_LOW, false)
+        batteryManager?.let { bm ->
+            remaining = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+            capacity = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
+            avg_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
+            now_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+            remaining_nanowatt = bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
+            chargeTimeRemaining = bm.computeChargeTimeRemaining()
+        }
     }
 
     constructor(c: Cursor) : super(c) {
@@ -137,12 +149,12 @@ class Event : ObservableTableRow {
         status = BatteryStatus.values()[getAsInt(::status.name)]
         level = getAsFloat(::level.name)
         scale = getAsInt(::scale.name)
-        this.capacity = getAsInt(::capacity.name)
-        this.remaining = getAsInt(::remaining.name)
-        this.temperature = getAsInt(::temperature.name)
-        this.voltage = getAsInt(::voltage.name)
-        this.chargeTimeRemaining = getAsLong(::chargeTimeRemaining.name)
-        time = getAsLong(::time.name)
+        capacity = getAsInt(::capacity.name)
+        remaining = getAsInt(::remaining.name)
+        temperature = getAsInt(::temperature.name)
+        voltage = getAsInt(::voltage.name)
+        chargeTimeRemaining = getAsLong(::chargeTimeRemaining.name)
+        ts = getAsLong(::ts.name)
     }
 
     constructor(
@@ -151,7 +163,7 @@ class Event : ObservableTableRow {
         status: BatteryStatus,
         level: Float,
         scale: Int,
-        time: Long,
+        ts: Long,
         remaining: Int,
         capacity: Int,
         avg_current: Int,
@@ -169,7 +181,7 @@ class Event : ObservableTableRow {
         this.status = status
         this.level = level
         this.scale = scale
-        this.time = time
+        this.ts = ts
         this.remaining = remaining
         this.capacity = capacity
         this.avg_current = avg_current
@@ -189,6 +201,6 @@ class Event : ObservableTableRow {
     }
 
     override fun toString(): String {
-        return "Event(id=$id, event=$event, status=$status, isCharging=$isCharging, level=$level, scale=$scale, time=$time, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
+        return "Event(id=$id, event=$event, status=$status, isCharging=$isCharging, level=$level, scale=$scale, time=$ts, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
     }
 }

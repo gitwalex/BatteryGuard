@@ -2,6 +2,7 @@ package com.gerwalex.batteryguard.main
 
 import android.database.Cursor
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -50,7 +51,9 @@ class FragmentEventList : Fragment() {
 
         override fun onBindViewHolder(holder: ViewHolder, mCursor: Cursor, position: Int) {
             val binding = holder.binding as EventListItemBinding
-            binding.event = Event(mCursor)
+            val event = Event(mCursor)
+            binding.event = event
+            Log.d("gerwalex", "Pos: $position, event: $event ")
         }
     }
 }

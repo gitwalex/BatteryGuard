@@ -9,6 +9,8 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.util.Log
+import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.gerwalex.batteryguard.R
@@ -19,6 +21,7 @@ import com.gerwalex.batteryguard.widget.BatteryGuardWidgetProvider
 
 class BatteryWidgetUpdater(val context: Context) {
 
+    private val textSize: Float = 30f
     val appWidgetManager = AppWidgetManager.getInstance(context)
     val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
     val mainPaint = Paint()
@@ -29,16 +32,16 @@ class BatteryWidgetUpdater(val context: Context) {
         mainPaint.isAntiAlias = true
         mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_green_light)
         mainPaint.style = Paint.Style.STROKE
-        mainPaint.strokeWidth = 5
+        mainPaint.strokeWidth = 10
             .dpToPx()
             .toFloat()
         backgroundPaint.isAntiAlias = true
         backgroundPaint.color = ContextCompat.getColor(context, android.R.color.darker_gray)
         backgroundPaint.style = Paint.Style.STROKE
-        backgroundPaint.strokeWidth = 5
+        backgroundPaint.strokeWidth = 10
             .dpToPx()
             .toFloat()
-        margin = 3.dpToPx() // margin should be >= strokeWidth / 2 (otherwise the arc is cut)
+        margin = 5.dpToPx() // margin should be >= strokeWidth / 2 (otherwise the arc is cut)
     }
 
     fun updateWidget(level: Float, isCharging: Boolean) {
@@ -54,6 +57,7 @@ class BatteryWidgetUpdater(val context: Context) {
             }
         }
         appWidgetIds.forEach { appWidgetId ->
+            doStuff(appWidgetId)
             // Create an Intent to launch ExampleActivity.
             val pendingIntent: PendingIntent = PendingIntent.getActivity(
                 /* context = */ context,
@@ -63,21 +67,32 @@ class BatteryWidgetUpdater(val context: Context) {
             )
             // Get the layout for the widget and attach an on-click listener
             // to the button.
+            val bitmap = getBitmap(level / 100)
             val views: RemoteViews = RemoteViews(
                 context.packageName,
                 R.layout.appwidget_provider_layout
             ).apply {
-                setImageViewBitmap(R.id.circle, getBitmap(level / 100))
+                setImageViewBitmap(R.id.circle, bitmap)
                 setTextViewText(R.id.levelText,
                     level
                         .toInt()
                         .toString())
                 setOnClickPendingIntent(R.id.levelText, pendingIntent)
+                setTextViewTextSize(R.id.levelText, TypedValue.COMPLEX_UNIT_SP, textSize)
             }
             // Tell the AppWidgetManager to perform an update on the current
             // widget.p
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
+    }
+
+    private fun doStuff(appWidgetId: Int) {
+        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+        val min_w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+        val max_w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+        val min_h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+        val max_h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        Log.d("gerwalex", "AppWidgetOptions: min_w=$min_w, max_w=$max_w, min_h=$min_h, max_h=$max_h ")
     }
 
     private fun getBitmap(angle: Float): Bitmap? {

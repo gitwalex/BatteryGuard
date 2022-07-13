@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.BatteryManager
 import android.os.Bundle
 import android.util.Log
 import androidx.preference.PreferenceManager
@@ -19,6 +20,9 @@ import kotlinx.coroutines.launch
 class BatteryGuardWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
+        val batteryManager: BatteryManager? by lazy {
+            context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        }
         val pending = goAsync()
         try {
             CoroutineScope(Dispatchers.IO).launch {
@@ -28,7 +32,7 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
                     context.registerReceiver(null, ifilter)
                 }
                 batteryStatus?.let { intent ->
-                    val event = Event(BatteryEvent.UpdateWidget, intent)
+                    val event = Event(BatteryEvent.UpdateWidget, intent, batteryManager)
                     appWidgetUpdater.updateWidget(event.level, event.isCharging)
                 }
             }
