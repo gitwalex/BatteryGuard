@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -14,13 +15,14 @@ import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.gerwalex.batteryguard.R
-import com.gerwalex.batteryguard.ext.FloatExt.dpToPx
 import com.gerwalex.batteryguard.ext.IntExt.dpToPx
 import com.gerwalex.batteryguard.main.MainActivity
 import com.gerwalex.batteryguard.widget.BatteryGuardWidgetProvider
+import kotlin.math.min
 
 class BatteryWidgetUpdater(val context: Context) {
 
+    var widgetSize: Int = 48.dpToPx()
     private val textSize: Float = 30f
     val appWidgetManager = AppWidgetManager.getInstance(context)
     val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
@@ -32,16 +34,18 @@ class BatteryWidgetUpdater(val context: Context) {
         mainPaint.isAntiAlias = true
         mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_green_light)
         mainPaint.style = Paint.Style.STROKE
-        mainPaint.strokeWidth = 10
+        mainPaint.strokeWidth = 2
+            .dpToPx()
             .dpToPx()
             .toFloat()
         backgroundPaint.isAntiAlias = true
         backgroundPaint.color = ContextCompat.getColor(context, android.R.color.darker_gray)
         backgroundPaint.style = Paint.Style.STROKE
-        backgroundPaint.strokeWidth = 10
+        backgroundPaint.strokeWidth = 3
+            .dpToPx()
             .dpToPx()
             .toFloat()
-        margin = 5.dpToPx() // margin should be >= strokeWidth / 2 (otherwise the arc is cut)
+        margin = 2.dpToPx() // margin should be >= strokeWidth / 2 (otherwise the arc is cut)
     }
 
     fun updateWidget(level: Float, isCharging: Boolean) {
@@ -57,7 +61,6 @@ class BatteryWidgetUpdater(val context: Context) {
             }
         }
         appWidgetIds.forEach { appWidgetId ->
-            doStuff(appWidgetId)
             // Create an Intent to launch ExampleActivity.
             val pendingIntent: PendingIntent = PendingIntent.getActivity(
                 /* context = */ context,
@@ -67,7 +70,7 @@ class BatteryWidgetUpdater(val context: Context) {
             )
             // Get the layout for the widget and attach an on-click listener
             // to the button.
-            val bitmap = getBitmap(level / 100)
+            val bitmap = getBitmap(widgetSize, level / 100)
             val views: RemoteViews = RemoteViews(
                 context.packageName,
                 R.layout.appwidget_provider_layout
@@ -86,31 +89,34 @@ class BatteryWidgetUpdater(val context: Context) {
         }
     }
 
-    private fun doStuff(appWidgetId: Int) {
-        val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val min_w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-        val max_w = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
-        val min_h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
-        val max_h = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
-        Log.d("gerwalex", "AppWidgetOptions: min_w=$min_w, max_w=$max_w, min_h=$min_h, max_h=$max_h ")
+    /**
+     *
+     * @return appWidgetSize in dp
+     */
+    private fun getSize(appWidgetId: Int): Int {
+        val newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId)
+        val min_w = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+        val max_w = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+        val min_h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+        val max_h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        val size: Int = if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            min(min_h, min_w)
+        } else {
+            min(max_h, max_w)
+        }
+
+        Log.d("gerwalex", "AppWidgetOptions: min_w=$min_w, max_w=$max_w, min_h=$min_h, max_h=$max_h, size=$size ")
+        return if (size == 0) 48 else size
     }
 
-    private fun getBitmap(angle: Float): Bitmap? {
-        val size = context.resources
-            .getDimension(R.dimen.widgetSize)
-            .dpToPx()
+    private fun getBitmap(size: Int, angle: Float): Bitmap {
         val conf = Bitmap.Config.ARGB_8888 // see other conf types
-        val bmp = Bitmap.createBitmap(size.toInt(), size.toInt(), conf) // this creates a MUTABLE
-        // bitmap
+        val bmp = Bitmap.createBitmap(size, size, conf) // this creates a MUTABLE bitmap
         val canvas = Canvas(bmp)
-        val rectangle = RectF(0f + margin, 0f + margin, size - margin, size.toFloat() - margin)
-        onDraw(angle, canvas, rectangle)
-        return bmp
-    }
-
-    fun onDraw(angle: Float, canvas: Canvas, rectangle: RectF) {
+        val rectangle = RectF(0f + margin, 0f + margin, size.toFloat() - margin, size.toFloat() - margin)
         canvas.drawArc(rectangle, -90f, angle * 360, false, mainPaint)
         // This 2nd arc completes the circle. Remove it if you don't want it
         canvas.drawArc(rectangle, -90f + angle * 360, (1 - angle) * 360, false, backgroundPaint)
+        return bmp
     }
 }

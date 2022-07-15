@@ -5,17 +5,18 @@ import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.os.BatteryManager
 import android.os.Bundle
 import android.util.Log
 import androidx.preference.PreferenceManager
 import com.gerwalex.batteryguard.database.tables.Event
-import com.gerwalex.batteryguard.enums.BatteryEvent
 import com.gerwalex.batteryguard.system.BatteryWidgetUpdater
 import com.gerwalex.batteryguard.system.BatteryWorkerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlin.math.min
 
 class BatteryGuardWidgetProvider : AppWidgetProvider() {
 
@@ -32,7 +33,7 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
                     context.registerReceiver(null, ifilter)
                 }
                 batteryStatus?.let { intent ->
-                    val event = Event(BatteryEvent.UpdateWidget, intent, batteryManager)
+                    val event = Event(intent, batteryManager)
                     appWidgetUpdater.updateWidget(event.level, event.isCharging)
                 }
             }
@@ -41,8 +42,14 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    /**
+     * minWidth and maxHeight are the dimensions of your widget
+     * when the device is in portrait orientation,
+     * maxWidth and minHeight are the dimensions when the device is in landscape orientation.
+     * All in dp.
+     */
     override fun onAppWidgetOptionsChanged(
-        context: Context?,
+        context: Context,
         appWidgetManager: AppWidgetManager?,
         appWidgetId: Int,
         newOptions: Bundle?,
@@ -53,7 +60,13 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
             val max_w = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
             val min_h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
             val max_h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
-            Log.d("gerwalex", "AppWidgetOptions: min_w=$min_w, max_w=$max_w, min_h=$min_h, max_h=$max_h ")
+            val size: Int = if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                min(min_h, min_w)
+            } else {
+                min(max_h, max_w)
+            }
+
+            Log.d("gerwalex", "AppWidgetOptions: min_w=$min_w, max_w=$max_w, min_h=$min_h, max_h=$max_h, size=$size ")
         }
     }
 

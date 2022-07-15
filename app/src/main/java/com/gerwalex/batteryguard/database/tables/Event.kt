@@ -10,7 +10,6 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.gerwalex.batteryguard.database.DB.dao
-import com.gerwalex.batteryguard.enums.BatteryEvent
 import com.gerwalex.batteryguard.enums.BatteryStatus
 import com.gerwalex.lib.database.ObservableTableRow
 
@@ -24,7 +23,6 @@ class Event : ObservableTableRow {
             field = value
             value?.let { put("_id", value) } ?: putNull("_id")
         }
-    val event: BatteryEvent
     val status: BatteryStatus
     val isCharging: Boolean
         get() {
@@ -115,8 +113,7 @@ class Event : ObservableTableRow {
     @DrawableRes
     var icon: Int = android.R.drawable.ic_lock_idle_low_battery
 
-    constructor(event: BatteryEvent, batteryStatus: Intent, batteryManager: BatteryManager?) {
-        this.event = event
+    constructor(batteryStatus: Intent, batteryManager: BatteryManager?) {
         status = when (batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, -1)) {
             BatteryManager.BATTERY_STATUS_CHARGING -> BatteryStatus.Status_Charging
             BatteryManager.BATTERY_STATUS_FULL -> BatteryStatus.Status_Full
@@ -145,7 +142,6 @@ class Event : ObservableTableRow {
 
     constructor(c: Cursor) : super(c) {
         id = getAsLongOrNull("_id")
-        event = BatteryEvent.values()[getAsInt(::event.name)]
         status = BatteryStatus.values()[getAsInt(::status.name)]
         level = getAsFloat(::level.name)
         scale = getAsInt(::scale.name)
@@ -159,7 +155,6 @@ class Event : ObservableTableRow {
 
     constructor(
         id: Long,
-        event: BatteryEvent,
         status: BatteryStatus,
         level: Float,
         scale: Int,
@@ -177,7 +172,6 @@ class Event : ObservableTableRow {
         remaining_nanowatt: Long,
     ) : super() {
         this.id = id
-        this.event = event
         this.status = status
         this.level = level
         this.scale = scale
@@ -201,6 +195,6 @@ class Event : ObservableTableRow {
     }
 
     override fun toString(): String {
-        return "Event(id=$id, event=$event, status=$status, isCharging=$isCharging, level=$level, scale=$scale, time=$ts, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
+        return "Event(id=$id,  status=$status, isCharging=$isCharging, level=$level, scale=$scale, time=$ts, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
     }
 }

@@ -1,6 +1,7 @@
 package com.gerwalex.batteryguard.system
 
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -12,7 +13,7 @@ import androidx.preference.PreferenceManager
 import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
-import com.gerwalex.batteryguard.enums.BatteryEvent
+import com.gerwalex.batteryguard.main.MainActivity
 import kotlinx.coroutines.*
 
 class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
@@ -33,7 +34,6 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
                 } else {
                     getBatteryIntent()
                 }
-                var newEvent: Event? = null
                 batteryIntent?.let { it ->
                     when (intent.action) {
                         Intent.ACTION_SCREEN_OFF -> {
@@ -59,19 +59,17 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
                         Intent.ACTION_BATTERY_CHANGED -> {
                             val batteryManager: BatteryManager =
                                 context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
-                            newEvent = Event(BatteryEvent.Battery_Changed, it, batteryManager)
+                            val event = Event(it, batteryManager)
+                            event.insert()
+                            pendingUpdateEvent = if (isScreenOn) {
+                                doUpdate(event)
+                                null
+                            } else {
+                                event
+                            }
                         }
                         else -> {
                             throw IllegalArgumentException("Fatal! Action ${intent.action} not expected")
-                        }
-                    }
-                    newEvent?.let { event ->
-                        event.insert()
-                        if (isScreenOn) {
-                            doUpdate(event)
-                            pendingUpdateEvent = null
-                        } else {
-                            pendingUpdateEvent = event
                         }
                     }
                 }
@@ -93,7 +91,6 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
     private fun updateNotification(event: Event) {
         val progress = applicationContext.getString(R.string.observeBatteryProgress, event.status.name, event.level)
         val title = applicationContext.getString(R.string.notification_title)
-        // This PendingIntent can be used to cancel the worker
         val notification = NotificationCompat
             .Builder(applicationContext, channelID)
             .setTicker(title)
@@ -124,7 +121,12 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
     private fun createForegroundInfo(): ForegroundInfo {
         val progress = applicationContext.getString(R.string.observeBattery)
         val title = applicationContext.getString(R.string.notification_title)
-        // This PendingIntent can be used to cancel the worker
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(
+            /* context = */ applicationContext,
+            /* requestCode = */  0,
+            /* intent = */ Intent(applicationContext, MainActivity::class.java),
+            /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notification = NotificationCompat
             .Builder(applicationContext, channelID)
             .setTicker(title)
@@ -133,6 +135,7 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
             .setSmallIcon(android.R.drawable.ic_lock_idle_low_battery)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
+//            .setContentIntent(pendingIntent)
             .build()
 
         return ForegroundInfo(R.id.observeBatteryService, notification)
