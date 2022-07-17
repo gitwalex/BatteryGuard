@@ -10,6 +10,8 @@ import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import com.gerwalex.batteryguard.database.DB.dao
+import com.gerwalex.batteryguard.enums.BatteryHealth
+import com.gerwalex.batteryguard.enums.BatteryPlugged
 import com.gerwalex.batteryguard.enums.BatteryStatus
 import com.gerwalex.lib.database.ObservableTableRow
 
@@ -33,6 +35,7 @@ class Event : ObservableTableRow {
                 else -> false
             }
         }
+    var plugged: BatteryPlugged = BatteryPlugged.None
 
     /**
      * integer field containing the current battery level, from 0 to scale
@@ -97,7 +100,7 @@ class Event : ObservableTableRow {
     /**
      * integer containing the current health constant.
      */
-    var health: Int = -1
+    var health: BatteryHealth = BatteryHealth.UnKnown
 
     /**
      * Boolean field indicating whether the battery is currently considered to be low, that is whether a Intent#ACTION_BATTERY_LOW broadcast has been sent.
@@ -119,6 +122,12 @@ class Event : ObservableTableRow {
             BatteryManager.BATTERY_STATUS_FULL -> BatteryStatus.Status_Full
             else -> BatteryStatus.Status_Discharging
         }
+        plugged = when (batteryStatus.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)) {
+            BatteryManager.BATTERY_PLUGGED_AC -> BatteryPlugged.AC
+            BatteryManager.BATTERY_PLUGGED_USB -> BatteryPlugged.USB
+            BatteryManager.BATTERY_PLUGGED_WIRELESS -> BatteryPlugged.Wireless
+            else -> BatteryPlugged.None
+        }
         val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
         this.level = level * 100 / scale.toFloat()
@@ -128,7 +137,15 @@ class Event : ObservableTableRow {
         temperature = batteryStatus.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1)
         voltage = batteryStatus.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1)
         technology = batteryStatus.getStringExtra(BatteryManager.EXTRA_TECHNOLOGY)
-        health = batteryStatus.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)
+        health = when (batteryStatus.getIntExtra(BatteryManager.EXTRA_HEALTH, -1)) {
+            BatteryManager.BATTERY_HEALTH_COLD -> BatteryHealth.Cold
+            BatteryManager.BATTERY_HEALTH_DEAD -> BatteryHealth.Dead
+            BatteryManager.BATTERY_HEALTH_GOOD -> BatteryHealth.Good
+            BatteryManager.BATTERY_HEALTH_OVERHEAT -> BatteryHealth.Overheat
+            BatteryManager.BATTERY_HEALTH_OVER_VOLTAGE -> BatteryHealth.OverVoltage
+            BatteryManager.BATTERY_HEALTH_UNSPECIFIED_FAILURE -> BatteryHealth.UnspecifiedFailure
+            else -> BatteryHealth.UnKnown
+        }
         battery_low = batteryStatus.getBooleanExtra(BatteryManager.EXTRA_BATTERY_LOW, false)
         batteryManager?.let { bm ->
             remaining = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
@@ -145,12 +162,19 @@ class Event : ObservableTableRow {
         status = BatteryStatus.values()[getAsInt(::status.name)]
         level = getAsFloat(::level.name)
         scale = getAsInt(::scale.name)
+        health = BatteryHealth.values()[getAsInt(::health.name)]
+        plugged = BatteryPlugged.values()[getAsInt(::plugged.name)]
+        battery_low = getAsBoolean(::battery_low.name)
+        technology = getAsString(::technology.name)
         capacity = getAsInt(::capacity.name)
         remaining = getAsInt(::remaining.name)
         temperature = getAsInt(::temperature.name)
         voltage = getAsInt(::voltage.name)
         chargeTimeRemaining = getAsLong(::chargeTimeRemaining.name)
         ts = getAsLong(::ts.name)
+        avg_current = getAsInt(::avg_current.name)
+        now_current = getAsInt(::now_current.name)
+        remaining_nanowatt = getAsLong(::remaining_nanowatt.name)
     }
 
     constructor(
@@ -159,6 +183,7 @@ class Event : ObservableTableRow {
         level: Float,
         scale: Int,
         ts: Long,
+        plugged: BatteryPlugged,
         remaining: Int,
         capacity: Int,
         avg_current: Int,
@@ -167,7 +192,7 @@ class Event : ObservableTableRow {
         temperature: Int,
         voltage: Int,
         technology: String?,
-        health: Int,
+        health: BatteryHealth,
         battery_low: Boolean,
         remaining_nanowatt: Long,
     ) : super() {
@@ -176,6 +201,7 @@ class Event : ObservableTableRow {
         this.level = level
         this.scale = scale
         this.ts = ts
+        this.plugged = plugged
         this.remaining = remaining
         this.capacity = capacity
         this.avg_current = avg_current
@@ -195,6 +221,9 @@ class Event : ObservableTableRow {
     }
 
     override fun toString(): String {
-        return "Event(id=$id,  status=$status, isCharging=$isCharging, level=$level, scale=$scale, time=$ts, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
+        return "Event(id=$id,  status=$status, isCharging=$isCharging, plugged=$plugged, level=$level, " +
+                "scale=$scale, time=$ts, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, " +
+                "now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, " +
+                "voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
     }
 }

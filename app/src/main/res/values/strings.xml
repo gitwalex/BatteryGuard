@@ -2,8 +2,8 @@
     <string name="app_name">Battery Guard</string>
     <string name="action_settings">Settings</string>
     <!-- Strings used for fragments for navigation -->
-    <string name="first_fragment_label">First Fragment</string>
-    <string name="second_fragment_label">Second Fragment</string>
+    <string name="main_fragment_label">First Fragment</string>
+    <string name="eventlist_fragment_label">Second Fragment</string>
     <string name="next">Next</string>
     <string name="previous">Previous</string>
 
@@ -20,4 +20,7 @@
     <string name="channel_description">ChannelDescription</string>
     <string name="observeBatteryProgress">Status: %1$s, (%2$.0f \%%)</string>
     <string name="starteService">Starte Service</string>
+    <string name="chargeState">Ladezustand</string>
+    <string name="temperatur">Temperatur</string>
+    <string name="voltage">Volt</string>
 </resources>

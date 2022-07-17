@@ -15,8 +15,11 @@ abstract class Dao(val db: DB) {
     @Query("select level from event group by ts having max(ts)")
     abstract fun getBatteryLevel(): Long
 
-    @Query("Select * from event order by ts desc")
+    @Query("Select * from event order by ts")
     abstract fun getEventList(): Cursor
+
+    @Query("Select * from event order by ts desc")
+    abstract fun getEventListDesc(): Cursor
 
     @Query("select * from event group by ts having max(ts)")
     abstract fun getLastEvent(): Event?

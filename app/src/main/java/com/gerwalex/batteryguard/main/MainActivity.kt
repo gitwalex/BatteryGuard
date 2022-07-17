@@ -11,7 +11,6 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.databinding.ActivityMainBinding
 import com.gerwalex.batteryguard.system.BatteryWorkerService
-import com.google.android.material.snackbar.Snackbar
 
 class MainActivity : AppCompatActivity() {
 
@@ -28,12 +27,6 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        binding.fab.setOnClickListener { view ->
-            Snackbar
-                .make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null)
-                .show()
-        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

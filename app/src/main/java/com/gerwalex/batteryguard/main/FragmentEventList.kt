@@ -11,8 +11,8 @@ import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.DB
 import com.gerwalex.batteryguard.database.DB.dao
 import com.gerwalex.batteryguard.database.tables.Event
+import com.gerwalex.batteryguard.databinding.BatteryEventListItemBinding
 import com.gerwalex.batteryguard.databinding.EventListBinding
-import com.gerwalex.batteryguard.databinding.EventListItemBinding
 import com.gerwalex.lib.adapters.CursorAdapter
 import com.gerwalex.lib.adapters.ViewHolder
 import com.gerwalex.lib.database.LiveCursorNew
@@ -23,7 +23,7 @@ import com.gerwalex.lib.database.LiveCursorNew
 class FragmentEventList : Fragment() {
 
     private val data = LiveCursorNew(DB.get(), "Event") {
-        dao.getEventList()
+        dao.getEventListDesc()
     }
     private lateinit var binding: EventListBinding
     override fun onCreateView(
@@ -46,11 +46,11 @@ class FragmentEventList : Fragment() {
     inner class EventListAdapter : CursorAdapter() {
 
         override fun getItemViewType(position: Int): Int {
-            return R.layout.event_list_item
+            return R.layout.battery_event_list_item
         }
 
         override fun onBindViewHolder(holder: ViewHolder, mCursor: Cursor, position: Int) {
-            val binding = holder.binding as EventListItemBinding
+            val binding = holder.binding as BatteryEventListItemBinding
             val event = Event(mCursor)
             binding.event = event
             Log.d("gerwalex", "Pos: $position, event: $event ")
