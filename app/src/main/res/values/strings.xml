@@ -23,4 +23,21 @@
     <string name="chargeState">Ladezustand</string>
     <string name="temperatur">Temperatur</string>
     <string name="voltage">Volt</string>
+    <string name="charging">Lädt</string>
+    <string name="discharging">Entladen</string>
+    <string name="full">Aufgeladen</string>
+    <string name="unknown">Unbekannt</string>
+    <string name="good">Gut</string>
+    <string name="overheat">Überhitzt</string>
+    <string name="dead">Defekt</string>
+    <string name="overvoltage">Überladen</string>
+    <string name="unspecifiedFailure">Nicht spezifizierter Fehler</string>
+    <string name="cold">Kalt</string>
+    <string name="health">Zustand</string>
+    <string name="status">Status</string>
+    <string name="plugged">Ladeart</string>
+    <string name="temperature">Temperatur</string>
+    <string name="properties">Eigenschaften</string>
+    <string name="capacity">"Kapazität (mAh)"</string>
+    <string name="chargeTimeRemaining">Zeit bis aufgeladen</string>
 </resources>

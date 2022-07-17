@@ -18,6 +18,7 @@ import com.gerwalex.lib.database.ObservableTableRow
 @Entity
 class Event : ObservableTableRow {
 
+
     @ColumnInfo(name = "_id")
     @PrimaryKey(autoGenerate = true)
     var id: Long? = null
@@ -58,9 +59,14 @@ class Event : ObservableTableRow {
     var remaining: Int = 0
 
     /**
-     *       Battery capacity in microampere-hours, as an integer.
+     * Battery capacity in microampere-hours, as an integer.
      */
     var capacity: Int = 0
+
+    /**
+     * Battery capacity in microampere-hours
+     */
+    var chargeCounter: Int = -1
 
     /**
     Average battery current in microamperes, as an integer.
@@ -152,6 +158,7 @@ class Event : ObservableTableRow {
             capacity = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
             avg_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE)
             now_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+            chargeCounter = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
             remaining_nanowatt = bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
             chargeTimeRemaining = bm.computeChargeTimeRemaining()
         }

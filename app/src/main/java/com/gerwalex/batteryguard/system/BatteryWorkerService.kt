@@ -9,7 +9,6 @@ import android.os.BatteryManager
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import androidx.preference.PreferenceManager
 import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
@@ -135,7 +134,7 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
             .setSmallIcon(android.R.drawable.ic_lock_idle_low_battery)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-//            .setContentIntent(pendingIntent)
+            .setContentIntent(pendingIntent)
             .build()
 
         return ForegroundInfo(R.id.observeBatteryService, notification)
@@ -155,16 +154,12 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
 
         @JvmStatic
         fun startService(context: Context) {
-            val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-            if (prefs.getBoolean(SERVICE_REQUIRED, false)) {
-                // Service nur starten, wenn benötigt
-                val request = OneTimeWorkRequest
-                    .Builder(BatteryWorkerService::class.java)
-                    .build()
-                WorkManager
-                    .getInstance(context)
-                    .enqueueUniqueWork(SERVICENAME, ExistingWorkPolicy.KEEP, request)
-            }
+            val request = OneTimeWorkRequest
+                .Builder(BatteryWorkerService::class.java)
+                .build()
+            WorkManager
+                .getInstance(context)
+                .enqueueUniqueWork(SERVICENAME, ExistingWorkPolicy.KEEP, request)
         }
     }
 }

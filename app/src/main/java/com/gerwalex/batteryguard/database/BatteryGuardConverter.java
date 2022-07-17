@@ -3,6 +3,7 @@ package com.gerwalex.batteryguard.database;
 import androidx.annotation.NonNull;
 import androidx.room.TypeConverter;
 
+import com.gerwalex.batteryguard.R;
 import com.gerwalex.batteryguard.enums.BatteryHealth;
 import com.gerwalex.batteryguard.enums.BatteryPlugged;
 import com.gerwalex.batteryguard.enums.BatteryStatus;
@@ -10,6 +11,7 @@ import com.gerwalex.lib.database.MyConverter;
 
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class BatteryGuardConverter extends MyConverter {
 
@@ -52,7 +54,7 @@ public class BatteryGuardConverter extends MyConverter {
     }
 
     public static String convertCapacity(@NonNull Integer value) {
-        return value.toString();
+        return ((Integer) (value / 1000)).toString();
     }
 
     public static String convertDate(long date) {
@@ -61,12 +63,30 @@ public class BatteryGuardConverter extends MyConverter {
                 .format(new Date(date));
     }
 
-    public static String convertRemaining(@NonNull Long value) {
-        return value.toString();
+    public static int convertHealthToString(BatteryHealth health) {
+        return health == null ? R.string.unknown : health.getTextResID();
     }
 
-    public static String convertTemperatur(@NonNull Integer value) {
-        return value.toString();
+    public static String convertNanowattHours(long nanowattHours) {
+        return ((Long) (nanowattHours / 1000)).toString();
+    }
+
+    public static String convertRemainingChargeTime(long value) {
+        if (value == -1) {
+            return null;
+        }
+        int time = (int) (value / 1000);
+        int minutes = (int) (time / 60);
+        int seconds = (int) (time % 60);
+        return String.format(Locale.getDefault(), "%1d min,%2d sec", minutes, seconds);
+    }
+
+    public static int convertStatusToString(BatteryStatus status) {
+        return status == null ? R.string.unknown : status.getTextResID();
+    }
+
+    public static String convertTemperatur(int value) {
+        return ((Float) (value / 10f)).toString();
     }
 
     public static String convertVolt(@NonNull Integer value) {
