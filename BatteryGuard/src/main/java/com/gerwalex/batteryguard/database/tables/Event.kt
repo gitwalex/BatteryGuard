@@ -3,6 +3,7 @@ package com.gerwalex.batteryguard.database.tables
 import android.content.Intent
 import android.database.Cursor
 import android.os.BatteryManager
+import android.os.Build
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.room.ColumnInfo
@@ -17,7 +18,6 @@ import com.gerwalex.lib.database.ObservableTableRow
 
 @Entity
 class Event : ObservableTableRow {
-
 
     @ColumnInfo(name = "_id")
     @PrimaryKey(autoGenerate = true)
@@ -160,7 +160,9 @@ class Event : ObservableTableRow {
             now_current = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
             chargeCounter = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CHARGE_COUNTER)
             remaining_nanowatt = bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER)
-            chargeTimeRemaining = bm.computeChargeTimeRemaining()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                chargeTimeRemaining = bm.computeChargeTimeRemaining()
+            }
         }
     }
 

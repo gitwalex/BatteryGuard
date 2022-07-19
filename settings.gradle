@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "BatteryGuard"
-include ':app'
-include ':lib'
+include ':BatteryGuard'
+//include ':lib'

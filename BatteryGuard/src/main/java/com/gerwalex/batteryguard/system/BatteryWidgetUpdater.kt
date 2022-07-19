@@ -6,10 +6,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Paint
-import android.graphics.RectF
+import android.graphics.*
 import android.util.Log
 import android.util.TypedValue
 import android.widget.RemoteViews
@@ -28,10 +25,10 @@ class BatteryWidgetUpdater(val context: Context) {
     private val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
     private val mainPaint = Paint()
     private val backgroundPaint = Paint()
-    private val arcWidth = 3
+    private val arcWidth = 6
         .dpToPx()
         .toFloat()
-    private val margin = 2
+    private val margin = 3
         .dpToPx()
         .toFloat()
 
@@ -49,7 +46,7 @@ class BatteryWidgetUpdater(val context: Context) {
     fun updateWidget(level: Float, isCharging: Boolean) {
         val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetProvider)
         if (isCharging) {
-            mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_blue_light)
+            mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_blue_dark)
         } else {
             when (level.toInt()) {
                 in 0..30 -> mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_red_light)
@@ -111,10 +108,33 @@ class BatteryWidgetUpdater(val context: Context) {
         val conf = Bitmap.Config.ARGB_8888 // see other conf types
         val bmp = Bitmap.createBitmap(size, size, conf) // this creates a MUTABLE bitmap
         val canvas = Canvas(bmp)
+        val paint = Paint().apply {
+            color = Color.BLACK
+            style = Paint.Style.FILL
+        }
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
         val rectangle = RectF(0f + margin, 0f + margin, size.toFloat() - margin, size.toFloat() - margin)
         canvas.drawArc(rectangle, -90f, angle * 360, false, mainPaint)
         // This 2nd arc completes the circle. Remove it if you don't want it
         canvas.drawArc(rectangle, -90f + angle * 360, (1 - angle) * 360, false, backgroundPaint)
         return bmp
     }
+//    fun draw(text: String) {
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//            val sb = StaticLayout.Builder
+//                .obtain(text, paint, width)
+//                .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+//                .setLineSpacing(mSpacingAdd, mSpacingMult)
+//                .setIncludePad(false)
+//            var layout = sb.build()
+//        } else {
+//            var layout = StaticLayout(text,
+//                paint,
+//                width,
+//                Alignment.ALIGN_NORMAL,
+//                mSpacingMult,
+//                mSpacingAdd,
+//                false);
+//        }
+//    }
 }

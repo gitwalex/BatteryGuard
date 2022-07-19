@@ -126,7 +126,8 @@ class BatteryGuardService : Service() {
     }
 
     private fun updateNotification(event: Event) {
-        val progress = applicationContext.getString(R.string.observeBatteryProgress, event.status.name, event.level)
+        val status = applicationContext.getString(event.status.getTextResID())
+        val progress = applicationContext.getString(R.string.observeBatteryProgress, status, event.level)
         val title = applicationContext.getString(R.string.notification_title)
         val notification = NotificationCompat
             .Builder(applicationContext, channelID)
@@ -141,13 +142,11 @@ class BatteryGuardService : Service() {
     }
 
     private fun createForegroundInfo(): Notification {
-        val progress = applicationContext.getString(R.string.observeBattery)
         val title = applicationContext.getString(R.string.notification_title)
         return NotificationCompat
             .Builder(applicationContext, channelID)
             .setTicker(title)
             .setContentTitle(title)
-            .setContentText(progress)
             .setSmallIcon(android.R.drawable.ic_lock_idle_low_battery)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

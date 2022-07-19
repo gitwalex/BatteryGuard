@@ -30,10 +30,12 @@ class App : com.gerwalex.lib.main.App() {
         val notificationManager =
             applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as
                     NotificationManager
-        val channel = NotificationChannel(CHANNELID, name, importance).apply {
-            description = descriptionText
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNELID, name, importance).apply {
+                description = descriptionText
+                // Register the channel with the system
+            }
+            notificationManager.createNotificationChannel(channel)
         }
-        // Register the channel with the system
-        notificationManager.createNotificationChannel(channel)
     }
 }
