@@ -22,30 +22,28 @@ import kotlin.math.min
 
 class BatteryWidgetUpdater(val context: Context) {
 
-    var widgetSize: Int = 48.dpToPx()
+    private var widgetSize: Int = 48.dpToPx()
     private val textSize: Float = 30f
-    val appWidgetManager = AppWidgetManager.getInstance(context)
-    val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
-    val mainPaint = Paint()
-    val backgroundPaint = Paint()
-    val margin: Int
+    private val appWidgetManager = AppWidgetManager.getInstance(context)
+    private val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
+    private val mainPaint = Paint()
+    private val backgroundPaint = Paint()
+    private val arcWidth = 3
+        .dpToPx()
+        .toFloat()
+    private val margin = 2
+        .dpToPx()
+        .toFloat()
 
     init {
         mainPaint.isAntiAlias = true
         mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_green_light)
         mainPaint.style = Paint.Style.STROKE
-        mainPaint.strokeWidth = 2
-            .dpToPx()
-            .dpToPx()
-            .toFloat()
+        mainPaint.strokeWidth = arcWidth
         backgroundPaint.isAntiAlias = true
         backgroundPaint.color = ContextCompat.getColor(context, android.R.color.darker_gray)
         backgroundPaint.style = Paint.Style.STROKE
-        backgroundPaint.strokeWidth = 3
-            .dpToPx()
-            .dpToPx()
-            .toFloat()
-        margin = 2.dpToPx() // margin should be >= strokeWidth / 2 (otherwise the arc is cut)
+        backgroundPaint.strokeWidth = arcWidth
     }
 
     fun updateWidget(level: Float, isCharging: Boolean) {

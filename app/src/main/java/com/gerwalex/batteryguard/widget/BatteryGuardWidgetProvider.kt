@@ -9,10 +9,8 @@ import android.content.res.Configuration
 import android.os.BatteryManager
 import android.os.Bundle
 import android.util.Log
-import androidx.preference.PreferenceManager
 import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.system.BatteryWidgetUpdater
-import com.gerwalex.batteryguard.system.BatteryWorkerService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -72,24 +70,11 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         super.onDisabled(context)
-        BatteryWorkerService.stopService(context)
-        PreferenceManager
-            .getDefaultSharedPreferences(context)
-            .edit()
-            .putBoolean(BatteryWorkerService
-                .SERVICE_REQUIRED, false)
-            .apply()
         Log.d("gerwalex", "GuardWidgetProvider disabled")
     }
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
-        PreferenceManager
-            .getDefaultSharedPreferences(context)
-            .edit()
-            .putBoolean(BatteryWorkerService
-                .SERVICE_REQUIRED, true)
-            .apply()
         Log.d("gerwalex", "GuardWidgetProvider enabled")
     }
 }

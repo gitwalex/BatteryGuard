@@ -5,14 +5,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.util.Log
+import androidx.lifecycle.MutableLiveData
 
-class BatteryBroadcastReceiver() : BroadcastReceiver() {
-
-    private var service: BatteryWorkerService? = null
-
-    constructor(service: BatteryWorkerService) : this() {
-        this.service = service
-    }
+class BatteryBroadcastReceiver(val intentWatcher: MutableLiveData<Intent>) : BroadcastReceiver() {
 
     private var isRegistered = false
     private val intentFilter = IntentFilter().apply {
@@ -42,9 +37,6 @@ class BatteryBroadcastReceiver() : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("gerwalex", "Broadcast received: ${intent.action}")
         when (intent.action) {
-            Intent.ACTION_BOOT_COMPLETED -> {
-                BatteryWorkerService.startService(context)
-            }
             Intent.ACTION_SCREEN_OFF,
             Intent.ACTION_SCREEN_ON,
             Intent.ACTION_POWER_CONNECTED,
@@ -53,7 +45,7 @@ class BatteryBroadcastReceiver() : BroadcastReceiver() {
             Intent.ACTION_BATTERY_OKAY,
             Intent.ACTION_BATTERY_CHANGED,
             -> {
-                service?.broadcastIntent?.postValue(intent)
+                intentWatcher.postValue(intent)
             }
             else -> {
                 throw IllegalArgumentException("Fatal! Action ${intent.action} not expected")

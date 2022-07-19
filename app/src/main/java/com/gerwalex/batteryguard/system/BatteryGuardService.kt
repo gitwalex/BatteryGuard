@@ -1,32 +1,48 @@
 package com.gerwalex.batteryguard.system
 
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import android.os.Binder
+import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import androidx.work.*
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.main.MainActivity
 import kotlinx.coroutines.*
 
-class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
-    CoroutineWorker(context, parameters) {
+class BatteryGuardService : Service() {
 
-    var broadcastIntent = MutableLiveData<Intent>()
+    private val startAppIntent by lazy {
+        PendingIntent.getActivity(
+            /* context = */ applicationContext,
+            /* requestCode = */  0,
+            /* intent = */ Intent(applicationContext, MainActivity::class.java),
+            /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+    private var job: Job? = null
+    private var broadcastIntent = MutableLiveData<Intent>()
     private var pendingUpdateEvent: Event? = null
     private var isScreenOn: Boolean = true // Beim Start ist der Bildschirm immer eingeschaltet
     private var isCharging: Boolean = false
     private val channelID by lazy { applicationContext.getString(R.string.notification_channel_id) }
-    private val appWidgetUpdater = BatteryWidgetUpdater(applicationContext)
-    private val batteryReceiver = BatteryBroadcastReceiver(this)
+    private val appWidgetUpdater by lazy {
+        BatteryWidgetUpdater(applicationContext)
+    }
+    val lastEvent = MutableLiveData<Event>()
+    private val batteryReceiver = BatteryBroadcastReceiver(broadcastIntent)
     private val observeBroadcastIntent = Observer<Intent> { intent ->
         MainScope().launch {
+            Log.d("gerwalex", "JobService: Action received ${intent.action} ")
             withContext(Dispatchers.IO) {
                 val batteryIntent = if (intent.action == Intent.ACTION_BATTERY_CHANGED) {
                     intent
@@ -57,9 +73,10 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
                         }
                         Intent.ACTION_BATTERY_CHANGED -> {
                             val batteryManager: BatteryManager =
-                                context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+                                applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
                             val event = Event(it, batteryManager)
                             event.insert()
+                            lastEvent.postValue(event)
                             pendingUpdateEvent = if (isScreenOn) {
                                 doUpdate(event)
                                 null
@@ -87,6 +104,27 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
         }
     }
 
+    override fun onCreate() {
+        super.onCreate()
+        Log.d("gerwalex", "BatteryService created:$this")
+        broadcastIntent.observeForever(observeBroadcastIntent)
+        job = MainScope().launch {
+            startForeground(R.id.observeBatteryService, createForegroundInfo())
+            batteryReceiver.register(applicationContext)
+            withContext(Dispatchers.IO) {
+                try {
+                    broadcastIntent.postValue(getBatteryIntent())
+                    awaitCancellation()
+                } catch (e: CancellationException) {
+                    batteryReceiver.unregister(applicationContext)
+                    broadcastIntent.removeObserver(observeBroadcastIntent)
+                    e.printStackTrace()
+                    job = null
+                }
+            }
+        }
+    }
+
     private fun updateNotification(event: Event) {
         val progress = applicationContext.getString(R.string.observeBatteryProgress, event.status.name, event.level)
         val title = applicationContext.getString(R.string.notification_title)
@@ -96,37 +134,16 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
             .setContentTitle(title)
             .setContentText(progress)
             .setSmallIcon(event.icon)
+            .setContentIntent(startAppIntent)
             .build()
         (applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager)
             .notify(R.id.observeBatteryService, notification)
     }
 
-    override suspend fun doWork(): Result {
-        setForeground(createForegroundInfo())
-        try {
-            withContext(Dispatchers.Main) {
-                batteryReceiver.register(applicationContext)
-                broadcastIntent.observeForever(observeBroadcastIntent)
-            }
-            broadcastIntent.postValue(getBatteryIntent())
-            awaitCancellation()
-        } catch (e: CancellationException) {
-            batteryReceiver.unregister(applicationContext)
-            e.printStackTrace()
-        }
-        return Result.success()
-    }
-
-    private fun createForegroundInfo(): ForegroundInfo {
+    private fun createForegroundInfo(): Notification {
         val progress = applicationContext.getString(R.string.observeBattery)
         val title = applicationContext.getString(R.string.notification_title)
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(
-            /* context = */ applicationContext,
-            /* requestCode = */  0,
-            /* intent = */ Intent(applicationContext, MainActivity::class.java),
-            /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val notification = NotificationCompat
+        return NotificationCompat
             .Builder(applicationContext, channelID)
             .setTicker(title)
             .setContentTitle(title)
@@ -134,32 +151,26 @@ class BatteryWorkerService(context: Context, parameters: WorkerParameters) :
             .setSmallIcon(android.R.drawable.ic_lock_idle_low_battery)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .setContentIntent(pendingIntent)
+            .setContentIntent(startAppIntent)
             .build()
-
-        return ForegroundInfo(R.id.observeBatteryService, notification)
     }
 
-    companion object {
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return START_STICKY
+    }
 
-        private const val SERVICENAME = "BatteryWorkerService"
-        const val SERVICE_REQUIRED = "SERVICE_REQUIRED"
+    override fun onDestroy() {
+        super.onDestroy()
+        job?.cancel()
+    }
 
-        @JvmStatic
-        fun stopService(context: Context) {
-            WorkManager
-                .getInstance(context)
-                .cancelUniqueWork(SERVICENAME)
-        }
+    override fun onBind(intent: Intent?): IBinder {
+        return BatteryServiceBinder()
+    }
 
-        @JvmStatic
-        fun startService(context: Context) {
-            val request = OneTimeWorkRequest
-                .Builder(BatteryWorkerService::class.java)
-                .build()
-            WorkManager
-                .getInstance(context)
-                .enqueueUniqueWork(SERVICENAME, ExistingWorkPolicy.KEEP, request)
-        }
+    inner class BatteryServiceBinder : Binder() {
+
+        val service: BatteryGuardService
+            get() = this@BatteryGuardService
     }
 }

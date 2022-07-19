@@ -1,5 +1,6 @@
 package com.gerwalex.batteryguard.main
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -8,10 +9,9 @@ import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.preference.PreferenceManager
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.databinding.ActivityMainBinding
-import com.gerwalex.batteryguard.system.BatteryWorkerService
+import com.gerwalex.batteryguard.system.BatteryGuardService
 
 class MainActivity : AppCompatActivity() {
 
@@ -19,10 +19,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        if (!prefs.getBoolean(BatteryWorkerService.SERVICE_REQUIRED, false)) {
-            BatteryWorkerService.startService(this)
-        }
+        val intent = Intent(this, BatteryGuardService::class.java)
+        startService(intent)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -45,14 +43,6 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.action_settings -> true
             else -> super.onOptionsItemSelected(item)
-        }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        if (!prefs.getBoolean(BatteryWorkerService.SERVICE_REQUIRED, false)) {
-            BatteryWorkerService.stopService(this)
         }
     }
 
