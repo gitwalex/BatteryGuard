@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory android:title="@string/sounds">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/pkNotificationsOn"
+            android:summary="@string/notificationsOnDesc"
+            android:title="@string/notificationsOn" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:key="@string/pkVibrationOn"
+            android:summary="@string/vibrationOnDesc"
+            android:title="@string/vibrationOn" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:dependency="@string/pkNotificationsOn"
+        android:summary="@string/chargingDesc"
+        android:title="@string/chargingSounds"
+        app:allowDividerBelow="true">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkNotificationsOn"
+            android:key="@string/pkPlugInSound"
+            android:summary="@string/noSoundFile"
+            android:title="@string/plugInSound" />
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkNotificationsOn"
+            android:key="@string/pkPlugOutSound"
+            android:summary="@string/noSoundFile"
+            android:title="@string/plugOutSound" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/lowChargePreference"
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="true">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkNotificationsOn"
+            android:key="@string/pkLowChargeSound"
+            android:summary="@string/noSoundFile"
+            android:title="@string/soundfilename" />
+        <com.gerwalex.batteryguard.preferences.TextViewPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkLowChargeSound"
+            android:key="@string/pkLowChargeSoundPercent"
+            android:summary="@string/lowChargeSoundPercentDesc"
+            android:title="@string/lowChargeSoundPercent"
+            app:preferencetext="20%" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/highChargePreference"
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="true">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkNotificationsOn"
+            android:key="@string/pkHighChargeSound"
+            android:summary="@string/noSoundFile"
+            android:title="@string/soundfilename" />
+        <com.gerwalex.batteryguard.preferences.TextViewPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkHighChargeSound"
+            android:key="@string/pkHighChargeSoundPercent"
+            android:summary="@string/highChargeSoundPercentDesc"
+            android:title="@string/highChargeSoundPercent"
+            app:preferencetext="80%" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="@string/highTemperaturePreference"
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="true">
+        <SwitchPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkNotificationsOn"
+            android:key="@string/pkHighTemperatureSound"
+            android:summary="@string/noSoundFile"
+            android:title="@string/soundfilename" />
+        <com.gerwalex.batteryguard.preferences.TextViewPreference
+            android:defaultValue="false"
+            android:dependency="@string/pkHighTemperatureSound"
+            android:key="@string/pkHighTemperature"
+            android:summary="@string/highTemperatureDesc"
+            android:title="@string/highTemperature"
+            app:preferencetext="35" />
+    </PreferenceCategory>
+</PreferenceScreen>

@@ -7,10 +7,9 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import androidx.core.content.ContextCompat
+import androidx.core.view.MenuProvider
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.lifecycleScope
@@ -47,6 +46,20 @@ class MainFragment : Fragment() {
     private val temperaturEntries = ArrayList<Entry>()
     private val voltEntries = ArrayList<Entry>()
     private lateinit var binding: MainFragmentBinding
+    private val menuProvider: MenuProvider = object : MenuProvider {
+        override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+            menuInflater.inflate(R.menu.menu_main, menu)
+        }
+
+        override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+            if (menuItem.itemId == R.id.action_settings) {
+                findNavController().navigate(R.id.action_MainFragment_to_batteryGuardPreferenceActivity)
+                return true
+            }
+            return false
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         requireContext().unbindService(serviceConnection)
@@ -72,6 +85,11 @@ class MainFragment : Fragment() {
         return binding.root
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        activity?.addMenuProvider(menuProvider)
+    }
+
     private fun getVoltLine(entries: List<Entry>): LineDataSet {
         return LineDataSet(entries, getString(R.string.voltage)).also {
             it.setDrawCircles(false)
@@ -84,13 +102,13 @@ class MainFragment : Fragment() {
     }
 
     private fun getTemperaturLine(entries: List<Entry>): LineDataSet {
-        return LineDataSet(entries, getString(R.string.temperatur)).also {
-            it.setDrawCircles(false)
-            it.setDrawValues(false)
-            it.axisDependency = YAxis.AxisDependency.RIGHT
-            it.lineWidth = 1.5f
-            it.mode = LineDataSet.Mode.HORIZONTAL_BEZIER
-            it.color = ContextCompat.getColor(requireContext(), android.R.color.holo_red_light)
+        return LineDataSet(entries, getString(R.string.temperatur)).apply {
+            setDrawCircles(false)
+            setDrawValues(false)
+            axisDependency = YAxis.AxisDependency.LEFT
+            lineWidth = 1.5f
+            mode = LineDataSet.Mode.HORIZONTAL_BEZIER
+            color = ContextCompat.getColor(requireContext(), android.R.color.holo_red_light)
         }
     }
 
@@ -111,16 +129,6 @@ class MainFragment : Fragment() {
         private val observer = Observer<Event> { event ->
             Log.d("gerwalex", "Event: $event ")
             binding.event = event
-//            with(binding) {
-//                chargeStateChart.data.addEntry(Entry(event.ts.toFloat(), event.remaining.toFloat()), 0)
-//                chargeStateChart.data.addEntry(Entry(event.ts.toFloat(), event.temperature / 10f), 1)
-//                voltChart.data.addEntry(Entry(event.ts.toFloat(), event.voltage.toFloat()), 0)
-//                chargeStateChart.data.notifyDataChanged()
-//                chargeStateChart.notifyDataSetChanged()
-//                chargeStateChart.invalidate()
-//                voltChart.data.notifyDataChanged()
-//                voltChart.notifyDataSetChanged()
-//            }
             with(binding) {
                 val firstdataSet = ArrayList<ILineDataSet>()
                 val secondDataSet = ArrayList<ILineDataSet>()

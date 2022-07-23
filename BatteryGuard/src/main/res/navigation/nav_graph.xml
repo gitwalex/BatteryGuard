@@ -14,6 +14,9 @@
         <action
             android:id="@+id/action_MainFragment_to_EventListFragment"
             app:destination="@id/FragmentEventList" />
+        <action
+            android:id="@+id/action_MainFragment_to_batteryGuardPreferenceActivity"
+            app:destination="@id/batteryGuardPreferenceActivity" />
     </fragment>
     <fragment
         android:id="@+id/FragmentEventList"
@@ -21,8 +24,9 @@
         android:label="@string/eventlist_fragment_label"
         tools:layout="@layout/event_list">
 
-        <action
-            android:id="@+id/action_SecondFragment_to_FirstFragment"
-            app:destination="@id/MainFragment" />
     </fragment>
+    <activity
+        android:id="@+id/batteryGuardPreferenceActivity"
+        android:name="com.gerwalex.batteryguard.preferences.PreferencesActivity"
+        android:label="@string/settings" />
 </navigation>

@@ -47,11 +47,14 @@
         </receiver>
 
         <activity
-            android:name=".widget.AppWidgetConfigurationActivity"
+            android:name=".preferences.PreferencesActivity"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".main.MainActivity" />
         </activity>
 
         <service

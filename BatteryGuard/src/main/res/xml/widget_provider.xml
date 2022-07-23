@@ -1,8 +1,9 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:configure="com.gerwalex.batteryguard.widget.AppWidgetConfigurationActivity"
+    android:configure="com.gerwalex.batteryguard.preferences.PreferencesActivity"
     android:description="@string/appwidget_description"
     android:initialLayout="@layout/loading_appwidget"
     android:minWidth="@dimen/widgetSize"
     android:minHeight="@dimen/widgetSize"
     android:previewLayout="@layout/appwidget_preview"
+    android:resizeMode="vertical|horizontal"
     android:widgetCategory="home_screen" />
