@@ -13,6 +13,7 @@ import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.gerwalex.batteryguard.R
+import com.gerwalex.batteryguard.ext.FloatExt.dpToPx
 import com.gerwalex.batteryguard.ext.IntExt.dpToPx
 import com.gerwalex.batteryguard.main.MainActivity
 import com.gerwalex.batteryguard.widget.BatteryGuardWidgetProvider
@@ -20,15 +21,20 @@ import kotlin.math.min
 
 class BatteryWidgetUpdater(val context: Context) {
 
-    private var widgetSize: Int = 48.dpToPx()
-    val widgetBackground = Paint().apply {
+    private val pendingIntent: PendingIntent = PendingIntent.getActivity(
+        /* context = */ context,
+        /* requestCode = */  0,
+        /* intent = */ Intent(context, MainActivity::class.java),
+        /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    private val widgetBackground = Paint().apply {
         color = Color.BLACK
         style = Paint.Style.FILL
     }
     val mTextPaint = TextPaint().apply {
         color = ContextCompat.getColor(context, android.R.color.white)
         isAntiAlias = true
-        textSize = 16 * context.resources.displayMetrics.density
+        textSize = 30f.dpToPx()
     }
     private val appWidgetManager = AppWidgetManager.getInstance(context)
     private val widgetProvider = ComponentName(context, BatteryGuardWidgetProvider::class.java)
@@ -57,17 +63,12 @@ class BatteryWidgetUpdater(val context: Context) {
             }
         }
         appWidgetIds.forEach { appWidgetId ->
-            // Create an Intent to launch ExampleActivity.
-            val pendingIntent: PendingIntent = PendingIntent.getActivity(
-                /* context = */ context,
-                /* requestCode = */  0,
-                /* intent = */ Intent(context, MainActivity::class.java),
-                /* flags = */ PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            // Get the layout for the widget and attach an on-click listener
-            // to the button.
-            widgetSize = getSize(appWidgetId)
-            val bitmap = getBitmap(widgetSize, level.toInt())
+            val widgetSize = getSize(appWidgetId)
+            val bitmap = getBitmap(widgetSize)
+            val canvas = Canvas(bitmap)
+            drawBackground(canvas, widgetSize)
+            drawArcs(canvas, widgetSize, level.toInt())
+            drawText(canvas, widgetSize, level.toString())
             val views: RemoteViews = RemoteViews(
                 context.packageName,
                 R.layout.appwidget_provider_layout
@@ -78,7 +79,7 @@ class BatteryWidgetUpdater(val context: Context) {
                     level
                         .toInt()
                         .toString())
-                setTextViewTextSize(R.id.levelText, TypedValue.COMPLEX_UNIT_SP, 30f)
+                setTextViewTextSize(R.id.levelText, TypedValue.COMPLEX_UNIT_PX, (widgetSize / 2f))
             }
             // Tell the AppWidgetManager to perform an update on the current
             // widget.p
@@ -105,24 +106,26 @@ class BatteryWidgetUpdater(val context: Context) {
         return if (size == 0) 48.dpToPx() else size
     }
 
-    private fun getBitmap(size: Int, level: Int): Bitmap {
-        val conf = Bitmap.Config.ARGB_8888 // see other conf types
-        val bmp = Bitmap.createBitmap(size, size, conf) // this creates a MUTABLE bitmap
-        val canvas = Canvas(bmp)
-        drawCanvas(canvas, size, level)
-        return bmp
+    private fun getBitmap(size: Int): Bitmap {
+        return Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
     }
 
-    private fun drawCanvas(canvas: Canvas, size: Int, level: Int) {
+    private fun drawText(canvas: Canvas, size: Int, text: String) {
+    }
+
+    private fun drawBackground(canvas: Canvas, size: Int) {
+        canvas.drawCircle(size / 2f, size / 2f, size / 2f, widgetBackground)
+    }
+
+    private fun drawArcs(canvas: Canvas, size: Int, level: Int) {
         val angle = level / 100f
         val arcWidth = size / 9f
         val margin = arcWidth / 2 + 1
         mainPaint.strokeWidth = arcWidth
         backgroundPaint.strokeWidth = arcWidth
-        canvas.drawCircle(size / 2f, size / 2f, size / 2f, widgetBackground)
         val rectangle = RectF(0f + margin, 0f + margin, size.toFloat() - margin, size.toFloat() - margin)
-        canvas.drawArc(rectangle, -90f, angle * 360, false, mainPaint)
+        canvas.drawArc(rectangle, -90f, (1 - angle) * 360, false, backgroundPaint)
         // This 2nd arc completes the circle. Remove it if you don't want it
-        canvas.drawArc(rectangle, -90f + angle * 360, (1 - angle) * 360, false, backgroundPaint)
+        canvas.drawArc(rectangle, -90f + (1 - angle) * 360, angle * 360, false, mainPaint)
     }
 }
