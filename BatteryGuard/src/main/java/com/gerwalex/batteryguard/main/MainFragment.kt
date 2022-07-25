@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
+import android.text.format.DateUtils
 import android.util.Log
 import android.view.*
 import androidx.core.content.ContextCompat
@@ -160,7 +161,8 @@ class MainFragment : Fragment() {
                 temperaturEntries.clear()
                 voltEntries.clear()
                 withContext(Dispatchers.IO) {
-                    val c = dao.getEventList()
+                    val from = System.currentTimeMillis() - DateUtils.DAY_IN_MILLIS
+                    val c = dao.getEventList(from)
                     if (c.moveToFirst()) {
                         var event: Event
                         do {

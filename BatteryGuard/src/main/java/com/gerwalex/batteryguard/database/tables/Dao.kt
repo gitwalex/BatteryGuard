@@ -18,6 +18,9 @@ abstract class Dao(val db: DB) {
     @Query("Select * from event order by ts")
     abstract fun getEventList(): Cursor
 
+    @Query("Select * from event where ts > :from order by ts")
+    abstract fun getEventList(from: Long): Cursor
+
     @Query("Select * from event order by ts desc")
     abstract fun getEventListDesc(): Cursor
 

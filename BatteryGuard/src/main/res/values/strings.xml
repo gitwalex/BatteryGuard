@@ -87,5 +87,8 @@
     <string name="vibrationOn">Vibration</string>
     <string name="vibrationOnDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy
         eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="lowChargeSound">Ton bei Erreichen niedriger Akkuladun</string>
+    <string name="notificationsNotAllowed">Benachrichtigungen sind nicht erlaubt.</string>
+    <string name="change">Ändern</string>
 
 </resources>
