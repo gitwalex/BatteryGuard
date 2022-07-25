@@ -7,8 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.*
+import android.os.Bundle
 import android.text.TextPaint
-import android.util.Log
 import android.util.TypedValue
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
@@ -52,6 +52,13 @@ class BatteryWidgetUpdater(val context: Context) {
 
     fun updateWidget(level: Float, isCharging: Boolean) {
         val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetProvider)
+        appWidgetIds.forEach { appWidgetId ->
+            val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
+            updateWidget(appWidgetId, options, level, isCharging)
+        }
+    }
+
+    fun updateWidget(appWidgetId: Int, options: Bundle, level: Float, isCharging: Boolean) {
         if (isCharging) {
             mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_blue_dark)
         } else {
@@ -62,48 +69,36 @@ class BatteryWidgetUpdater(val context: Context) {
                 else -> mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_green_light)
             }
         }
-        appWidgetIds.forEach { appWidgetId ->
-            val widgetSize = getSize(appWidgetId)
-            val bitmap = getBitmap(widgetSize)
-            val canvas = Canvas(bitmap)
-            drawBackground(canvas, widgetSize)
-            drawArcs(canvas, widgetSize, level.toInt())
-            drawText(canvas, widgetSize, level.toString())
-            val views: RemoteViews = RemoteViews(
-                context.packageName,
-                R.layout.appwidget_provider_layout
-            ).apply {
-                setOnClickPendingIntent(R.id.widget, pendingIntent)
-                setImageViewBitmap(R.id.circle, bitmap)
-                setTextViewText(R.id.levelText,
-                    level
-                        .toInt()
-                        .toString())
-                setTextViewTextSize(R.id.levelText, TypedValue.COMPLEX_UNIT_PX, (widgetSize / 2f))
-            }
-            // Tell the AppWidgetManager to perform an update on the current
-            // widget.p
-            appWidgetManager.updateAppWidget(appWidgetId, views)
-        }
-    }
-
-    /**
-     *
-     * @return appWidgetSize in dp
-     */
-    private fun getSize(appWidgetId: Int): Int {
-        val newOptions = appWidgetManager.getAppWidgetOptions(appWidgetId)
-        val min_w = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
-        val max_w = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
-        val min_h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
-        val max_h = newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
-        val size: Int = if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            min(min_h, min_w).dpToPx()
+        var size: Int = if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            val minW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+            val minH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+            min(minH, minW).dpToPx()
         } else {
-            min(max_h, max_w).dpToPx()
+            val maxW = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+            val maxH = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+            min(maxH, maxW).dpToPx()
         }
-        Log.d("gerwalex", "AppWidgetOptions: min_w=$min_w, max_w=$max_w, min_h=$min_h, max_h=$max_h, size=$size Pixel")
-        return if (size == 0) 48.dpToPx() else size
+        size = if (size == 0) 48.dpToPx() else size
+        val bitmap = getBitmap(size)
+        val canvas = Canvas(bitmap)
+        drawBackground(canvas, size)
+        drawArcs(canvas, size, level.toInt())
+        drawText(canvas, size, level.toString())
+        val views: RemoteViews = RemoteViews(
+            context.packageName,
+            R.layout.appwidget_provider_layout
+        ).apply {
+            setOnClickPendingIntent(R.id.widget, pendingIntent)
+            setImageViewBitmap(R.id.circle, bitmap)
+            setTextViewText(R.id.levelText,
+                level
+                    .toInt()
+                    .toString())
+            setTextViewTextSize(R.id.levelText, TypedValue.COMPLEX_UNIT_PX, (size / 2f))
+        }
+        // Tell the AppWidgetManager to perform an update on the current
+        // widget.p
+        appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
     private fun getBitmap(size: Int): Bitmap {

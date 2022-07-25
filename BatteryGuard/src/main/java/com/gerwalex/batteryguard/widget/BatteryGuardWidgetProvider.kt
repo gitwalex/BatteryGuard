@@ -6,7 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
-import android.util.Log
+import android.os.Bundle
 import com.gerwalex.batteryguard.database.tables.Event
 import com.gerwalex.batteryguard.system.BatteryWidgetUpdater
 import kotlinx.coroutines.CoroutineScope
@@ -25,17 +25,39 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
         val pending = goAsync()
         try {
             CoroutineScope(Dispatchers.IO).launch {
-                Log.d("gerwalex", "GuardWidgetProvider")
-                val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
-                    context.registerReceiver(null, ifilter)
-                }
-                batteryStatus?.let { intent ->
-                    val event = Event(intent, batteryManager)
-                    appWidgetUpdater?.updateWidget(event.level, event.isCharging)
+                getEvent(context)?.let { e ->
+                    appWidgetUpdater?.updateWidget(e.level, e.isCharging)
                 }
             }
         } finally {
             pending.finish()
+        }
+    }
+
+    private suspend fun getEvent(context: Context): Event? {
+        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { ifilter ->
+            context.registerReceiver(null, ifilter)
+        }
+        batteryStatus?.let { intent ->
+            val event = Event(intent, batteryManager)
+            event.insert()
+            return event
+        }
+        return null
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle,
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        this.context = context
+        CoroutineScope(Dispatchers.IO).launch {
+            getEvent(context)?.let {
+                appWidgetUpdater?.updateWidget(appWidgetId, newOptions, it.level, it.isCharging)
+            }
         }
     }
 }
