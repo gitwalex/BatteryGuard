@@ -50,19 +50,19 @@ class BatteryWidgetUpdater(val context: Context) {
         backgroundPaint.style = Paint.Style.STROKE
     }
 
-    fun updateWidget(level: Float, isCharging: Boolean) {
+    fun updateWidget(remaining: Int, isCharging: Boolean) {
         val appWidgetIds = appWidgetManager.getAppWidgetIds(widgetProvider)
         appWidgetIds.forEach { appWidgetId ->
             val options = appWidgetManager.getAppWidgetOptions(appWidgetId)
-            updateWidget(appWidgetId, options, level, isCharging)
+            updateWidget(appWidgetId, options, remaining, isCharging)
         }
     }
 
-    fun updateWidget(appWidgetId: Int, options: Bundle, level: Float, isCharging: Boolean) {
+    fun updateWidget(appWidgetId: Int, options: Bundle, remaining: Int, isCharging: Boolean) {
         if (isCharging) {
             mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_blue_dark)
         } else {
-            when (level.toInt()) {
+            when (remaining) {
                 in 0..30 -> mainPaint.color = ContextCompat.getColor(context, android.R.color.holo_red_light)
                 in 31..50 -> mainPaint.color =
                     ContextCompat.getColor(context, android.R.color.holo_orange_light)
@@ -82,18 +82,15 @@ class BatteryWidgetUpdater(val context: Context) {
         val bitmap = getBitmap(size)
         val canvas = Canvas(bitmap)
         drawBackground(canvas, size)
-        drawArcs(canvas, size, level.toInt())
-        drawText(canvas, size, level.toString())
+        drawArcs(canvas, size, remaining)
+        drawText(canvas, size, remaining.toString())
         val views: RemoteViews = RemoteViews(
             context.packageName,
             R.layout.appwidget_provider_layout
         ).apply {
             setOnClickPendingIntent(R.id.widget, pendingIntent)
             setImageViewBitmap(R.id.circle, bitmap)
-            setTextViewText(R.id.levelText,
-                level
-                    .toInt()
-                    .toString())
+            setTextViewText(R.id.levelText, remaining.toString())
             setTextViewTextSize(R.id.levelText, TypedValue.COMPLEX_UNIT_PX, (size / 2f))
         }
         // Tell the AppWidgetManager to perform an update on the current

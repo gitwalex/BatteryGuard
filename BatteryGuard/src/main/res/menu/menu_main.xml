@@ -3,6 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="com.gerwalex.batteryguard.MainActivity">
     <item
+        android:id="@+id/action_powerusage"
+        android:orderInCategory="80"
+        android:title="@string/powerUsage"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_powersettings"
+        android:orderInCategory="90"
+        android:title="@string/powerSettings"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
         android:title="@string/action_settings"

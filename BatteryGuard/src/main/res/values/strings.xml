@@ -15,7 +15,7 @@
     <string name="low_importance_channel_description">BatteryGuardChannelDescription (Niedrige Priorität)</string>
     <string name="high_importance_channel_name">BatteryGuardChannelName (Hohe Priorität)</string>
     <string name="high_importance_channel_description">BatteryGuardChannelDescription (Hohe Priorität)</string>
-    <string name="observeBatteryProgress">Status: %1$s (%2$.0f\%%)</string>
+    <string name="observeBatteryProgress">Status: %1$s (%2$d \%%)</string>
     <string name="chargeState">Ladezustand</string>
     <string name="temperatur">Temperatur</string>
     <string name="voltage">Volt</string>
@@ -29,6 +29,8 @@
     <string name="overvoltage">Überladen</string>
     <string name="unspecifiedFailure">Nicht spezifizierter Fehler</string>
     <string name="cold">Kalt</string>
+    <string name="remainingPercent">%1d\%%</string>
+    <string name="temperaturCelsius">%.0f\u00B0</string>
     <string name="health">Zustand</string>
     <string name="status">Status</string>
     <string name="plugged">Ladeart</string>
@@ -108,4 +110,11 @@
     <string name="plugOutSoundFileDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diamnonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
     <string name="optimalChargePreference">Optimale Akkuladung</string>
     <string name="highTemperaturPreference">Hohe Akkutemperatur</string>
+    <string name="powerUsage">Stromverbaruch</string>
+    <string name="powerSettings">Akku Einstellungen</string>
+    <string name="sorry_no_activity_found">Sorry. Activity kann nicht gestartet werden</string>
+    <string name="notificationChannel">Benachrichtigungen</string>
+    <string name="notificationChannelSettings">Einstellung zu Benachrichtigungen</string>
+    <string name="pkNotificationChannelSettings">pkNotificationChannelSettings\"</string>
+
 </resources>

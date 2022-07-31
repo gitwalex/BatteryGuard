@@ -101,7 +101,7 @@
                     style="@style/TextAppearance.MaterialComponents.Body1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@{BatteryGuardConverter.convertPercent(event.level/100)}"
+                    android:text="@{@string/remainingPercent(event.remaining)}"
                     tools:text="69/100" />
 
             </androidx.appcompat.widget.LinearLayoutCompat>

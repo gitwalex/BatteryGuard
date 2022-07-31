@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory android:title="@string/notificationChannel">
+        <Preference
+            android:key="@string/pkNotificationChannelSettings"
+            android:title="@string/notificationChannelSettings" />
+    </PreferenceCategory>
     <PreferenceCategory android:title="@string/vibration">
         <SwitchPreference
             android:defaultValue="false"

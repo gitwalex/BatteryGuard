@@ -39,16 +39,6 @@ class Event : ObservableTableRow {
     var plugged: BatteryPlugged = BatteryPlugged.None
 
     /**
-     * integer field containing the current battery level, from 0 to scale
-     */
-    val level: Float
-
-    /**
-     *  integer containing the maximum battery level.
-     */
-    val scale: Int
-
-    /**
      * Timestamp of event
      */
     val ts: Long
@@ -89,9 +79,15 @@ class Event : ObservableTableRow {
     var chargeTimeRemaining: Long = -1
 
     /**
+     * an approximation for how much time (in minutes) remains until the battery is empty.  if no time can be
+     * computed:
+     */
+    var dischargeTimeRemaining: Long? = null
+
+    /**
      * integer containing the current battery temperature.
      */
-    var temperature: Int = 0
+    var temperature: Int = -1
 
     /**
      *  integer containing the current battery voltage level.
@@ -134,9 +130,6 @@ class Event : ObservableTableRow {
             BatteryManager.BATTERY_PLUGGED_WIRELESS -> BatteryPlugged.Wireless
             else -> BatteryPlugged.None
         }
-        val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
-        scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
-        this.level = level * 100 / scale.toFloat()
         ts = System.currentTimeMillis()
         this.icon =
             batteryStatus.getIntExtra(BatteryManager.EXTRA_ICON_SMALL, android.R.drawable.ic_lock_idle_low_battery)
@@ -169,8 +162,6 @@ class Event : ObservableTableRow {
     constructor(c: Cursor) : super(c) {
         id = getAsLongOrNull("_id")
         status = BatteryStatus.values()[getAsInt(::status.name)]
-        level = getAsFloat(::level.name)
-        scale = getAsInt(::scale.name)
         health = BatteryHealth.values()[getAsInt(::health.name)]
         plugged = BatteryPlugged.values()[getAsInt(::plugged.name)]
         battery_low = getAsBoolean(::battery_low.name)
@@ -184,13 +175,12 @@ class Event : ObservableTableRow {
         avg_current = getAsInt(::avg_current.name)
         now_current = getAsInt(::now_current.name)
         remaining_nanowatt = getAsLong(::remaining_nanowatt.name)
+        dischargeTimeRemaining = getAsLongOrNull(::dischargeTimeRemaining.name)
     }
 
     constructor(
         id: Long,
         status: BatteryStatus,
-        level: Float,
-        scale: Int,
         ts: Long,
         plugged: BatteryPlugged,
         remaining: Int,
@@ -204,11 +194,10 @@ class Event : ObservableTableRow {
         health: BatteryHealth,
         battery_low: Boolean,
         remaining_nanowatt: Long,
+        dischargeTimeRemaining: Long?,
     ) : super() {
         this.id = id
         this.status = status
-        this.level = level
-        this.scale = scale
         this.ts = ts
         this.plugged = plugged
         this.remaining = remaining
@@ -222,6 +211,7 @@ class Event : ObservableTableRow {
         this.health = health
         this.battery_low = battery_low
         this.remaining_nanowatt = remaining_nanowatt
+        this.dischargeTimeRemaining = dischargeTimeRemaining
     }
 
     fun insert() {
@@ -230,8 +220,8 @@ class Event : ObservableTableRow {
     }
 
     override fun toString(): String {
-        return "Event(id=$id,  status=$status, isCharging=$isCharging, plugged=$plugged, level=$level, " +
-                "scale=$scale, time=$ts, remaining=$remaining, capacity=$capacity, avg_current=$avg_current, " +
+        return "Event(id=$id,  status=$status, isCharging=$isCharging, plugged=$plugged, time=$ts, remaining=$remaining, " +
+                "capacity=$capacity, avg_current=$avg_current, " +
                 "now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, " +
                 "voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
     }
@@ -282,7 +272,7 @@ class Event : ObservableTableRow {
         result = 31 * result + avg_current
         result = 31 * result + now_current
         result = 31 * result + chargeTimeRemaining.hashCode()
-        result = 31 * result + temperature
+        result = 31 * result + temperature.toInt()
         result = 31 * result + voltage
         result = 31 * result + health.hashCode()
         result = 31 * result + battery_low.hashCode()

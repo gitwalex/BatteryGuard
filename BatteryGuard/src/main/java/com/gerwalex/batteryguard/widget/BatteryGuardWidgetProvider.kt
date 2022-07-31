@@ -26,7 +26,7 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
         try {
             CoroutineScope(Dispatchers.IO).launch {
                 getEvent(context)?.let { e ->
-                    appWidgetUpdater?.updateWidget(e.level, e.isCharging)
+                    appWidgetUpdater?.updateWidget(e.remaining, e.isCharging)
                 }
             }
         } finally {
@@ -56,7 +56,7 @@ class BatteryGuardWidgetProvider : AppWidgetProvider() {
         this.context = context
         CoroutineScope(Dispatchers.IO).launch {
             getEvent(context)?.let {
-                appWidgetUpdater?.updateWidget(appWidgetId, newOptions, it.level, it.isCharging)
+                appWidgetUpdater?.updateWidget(appWidgetId, newOptions, it.remaining, it.isCharging)
             }
         }
     }

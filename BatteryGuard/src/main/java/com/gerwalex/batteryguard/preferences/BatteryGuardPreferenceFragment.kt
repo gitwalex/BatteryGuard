@@ -5,13 +5,15 @@ import android.content.SharedPreferences
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Bundle
-import android.provider.Settings
+import android.provider.Settings.*
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 import androidx.preference.SwitchPreference
 import com.gerwalex.batteryguard.R
 import com.gerwalex.batteryguard.ext.ContextExt.areNotificationsEnabled
+import com.gerwalex.batteryguard.ext.ContextExt.checkForActivity
+import com.gerwalex.batteryguard.ext.ContextExt.startActivityWithCheck
 import com.google.android.material.snackbar.Snackbar
 import xyz.aprildown.ultimateringtonepicker.RingtonePickerDialog
 import xyz.aprildown.ultimateringtonepicker.UltimateRingtonePicker
@@ -49,22 +51,35 @@ class BatteryGuardPreferenceFragment : PreferenceFragmentCompat() {
     }
 
     override fun onPreferenceTreeClick(preference: Preference): Boolean {
-        when (preference.key) {
-            getString(R.string.pkNotificationsOn) -> {
-                (preference as SwitchPreference).let { sw ->
-                    if (preference.isChecked)
-                        if (!requireContext().areNotificationsEnabled()) {
-                            Snackbar
-                                .make(requireView(), R.string.notificationsNotAllowed, Snackbar.LENGTH_LONG)
+        if (preference is SwitchPreference) {
+            if (preference.isChecked)
+                with(requireContext()) {
+                    if (areNotificationsEnabled()) {
+                        val sb =
+                            Snackbar.make(requireView(), R.string.notificationsNotAllowed, Snackbar.LENGTH_LONG)
+                        val intent = Intent(ACTION_APPLICATION_DETAILS_SETTINGS)
+                        if (checkForActivity(intent)) {
+                            sb
                                 .setAction(R.string.change) {
-                                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
                                     val uri = Uri.fromParts("package", it.context.packageName, null)
                                     intent.data = uri
                                     startActivity(intent)
                                 }
                                 .show()
-                            sw.isChecked = false
+                            preference.isChecked = false
                         }
+                    }
+                }
+        }
+        when (preference.key) {
+            getString(R.string.pkNotificationChannelSettings) -> {
+                val intent = Intent(ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                intent.putExtra(EXTRA_APP_PACKAGE, activity?.packageName)
+                intent.putExtra(EXTRA_CHANNEL_ID, getString(R.string.notification_high_importance_channel_id))
+                if (!requireContext().startActivityWithCheck(intent)) {
+                    Snackbar
+                        .make(requireView(), R.string.sorry_no_activity_found, Snackbar.LENGTH_LONG)
+                        .show()
                 }
             }
             else -> {

@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
+import android.provider.Settings
 import android.text.format.DateUtils
 import android.util.Log
 import android.view.*
@@ -26,6 +27,7 @@ import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
 import com.github.mikephil.charting.formatter.ValueFormatter
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,11 +55,33 @@ class MainFragment : Fragment() {
         }
 
         override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-            if (menuItem.itemId == R.id.action_settings) {
-                findNavController().navigate(R.id.action_MainFragment_to_batteryGuardPreferenceActivity)
-                return true
+            when (menuItem.itemId) {
+                R.id.action_settings -> {
+                    findNavController().navigate(R.id.action_MainFragment_to_batteryGuardPreferenceActivity)
+                    return true
+                }
+                R.id.action_powerusage -> {
+                    startActivityWithCheck(Intent(Intent.ACTION_POWER_USAGE_SUMMARY))
+                    return true
+                }
+                R.id.action_powersettings -> {
+                    startActivityWithCheck(Intent(Settings.ACTION_BATTERY_SAVER_SETTINGS))
+                    return true
+                }
             }
             return false
+        }
+    }
+
+    private fun startActivityWithCheck(intent: Intent) {
+        intent
+            .resolveActivity(requireActivity().packageManager)
+            ?.let {
+                startActivity(intent)
+            } ?: run {
+            Snackbar
+                .make(requireView(), R.string.sorry_no_activity_found, Snackbar.LENGTH_LONG)
+                .show()
         }
     }
 

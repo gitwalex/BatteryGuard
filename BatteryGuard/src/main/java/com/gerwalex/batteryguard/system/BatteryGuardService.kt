@@ -109,6 +109,7 @@ class BatteryGuardService : Service() {
                             val batteryManager: BatteryManager =
                                 applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
                             val event = Event(it, batteryManager)
+                            calculateDischargeTimeRemaining(event)
                             checkAlarms(event)
                             if (!event.isEqual(lastEvent.value)) {
                                 event.insert()
@@ -130,31 +131,48 @@ class BatteryGuardService : Service() {
         }
     }
 
+    private fun calculateDischargeTimeRemaining(event: Event) {
+        if (!event.isCharging) {
+            powerManager.batteryDischargePrediction?.let {
+                event.dischargeTimeRemaining = it.toSeconds()
+            } ?: let {
+            }
+        }
+    }
+
     /**
      *
      */
     private fun checkAlarms(event: Event) {
-        lastEvent.value?.let {
-            if (prefs.getBoolean(getString(R.string.pkLowChargeNotification), false)) {
-                val percent = prefs.getInt(getString(R.string.pkLowChargeSoundPercent), 20)
-                if (event.remaining <= percent && it.remaining > percent) {
-                    Log.d("gerwalex", "Alarm: lowCharge ${event.remaining}")
-                    play(prefs.getString(getString(R.string.pkLowChargeSoundFile), null))
-                }
+        if (prefs.getBoolean(getString(R.string.pkLowChargeNotification), false)) {
+            val percent = prefs.getInt(getString(R.string.pkLowChargeSoundPercent), 20)
+            val lastRemaining = lastEvent.value?.remaining ?: 100
+            if (event.remaining <= percent && lastRemaining > percent) {
+                Log.d("gerwalex", "Alarm: lowCharge ${event.remaining}")
+                val uriString = prefs.getString(getString(R.string.pkLowChargeSoundFile), null)
+                val uri = uriString?.let { Uri.parse(it) }
+                createAlarmNotification(R.string.lowChargePreference, getString(R.string.lowChargeSoundDesc), uri)
             }
-            if (prefs.getBoolean(getString(R.string.pkHighChargeNotification), false)) {
-                val percent = prefs.getInt(getString(R.string.pkHighChargeSoundPercent), 20)
-                if (event.remaining >= percent && it.remaining < percent) {
-                    Log.d("gerwalex", "Alarm: highCharge ${event.remaining}")
-                    play(prefs.getString(getString(R.string.pkHighChargeSoundFile), null))
-                }
+        }
+        if (prefs.getBoolean(getString(R.string.pkHighChargeNotification), false)) {
+            val percent = prefs.getInt(getString(R.string.pkHighChargeSoundPercent), 20)
+            val lastRemaining = lastEvent.value?.remaining ?: -1
+            if (event.remaining >= percent && lastRemaining < percent) {
+                Log.d("gerwalex", "Alarm: highCharge ${event.remaining}")
+                val uriString = prefs.getString(getString(R.string.pkHighChargeSoundFile), null)
+                val uri = uriString?.let { Uri.parse(it) }
+                createAlarmNotification(R.string.highChargePreference, getString(R.string.highChargeSoundDesc), uri)
             }
-            if (prefs.getBoolean(getString(R.string.pkHighTemperatureNotification), false)) {
-                val value = prefs.getInt(getString(R.string.pkHighTemperature), 40)
-                if (event.remaining >= value && it.remaining < value) {
-                    Log.d("gerwalex", "Alarm: highTemperatur ${event.remaining}")
-                    play(prefs.getString(getString(R.string.pkHighTemperatureSoundFile), null))
-                }
+        }
+        if (prefs.getBoolean(getString(R.string.pkHighTemperatureNotification), false)) {
+            val value = prefs.getInt(getString(R.string.pkHighTemperature), 40)
+            val lastTemperatur = lastEvent.value?.temperature ?: -1
+
+            if (event.remaining >= value && lastTemperatur < value) {
+                Log.d("gerwalex", "Alarm: highTemperatur ${event.remaining}")
+                val uriString = prefs.getString(getString(R.string.pkHighTemperatureSoundFile), null)
+                val uri = uriString?.let { Uri.parse(it) }
+                createAlarmNotification(R.string.highTemperature, getString(R.string.highTemperatureDesc), uri)
             }
         }
     }
@@ -190,7 +208,7 @@ class BatteryGuardService : Service() {
 
     private fun doUpdate(event: Event) {
         val status = applicationContext.getString(event.status.getTextResID())
-        val progress = applicationContext.getString(R.string.observeBatteryProgress, status, event.level)
+        val progress = applicationContext.getString(R.string.observeBatteryProgress, status, event.remaining)
         val title = applicationContext.getString(R.string.notification_title)
         val notification = NotificationCompat
             .Builder(applicationContext, LOWIMPORTANCECHANNELID)
@@ -201,7 +219,8 @@ class BatteryGuardService : Service() {
             .setContentIntent(startAppIntent)
             .build()
         notificationManager.notify(R.id.observeBatteryService, notification)
-        appWidgetUpdater.updateWidget(event.level, event.isCharging)
+        if (event.remaining != (lastEvent.value?.remaining ?: 0))
+            appWidgetUpdater.updateWidget(event.remaining, event.isCharging)
     }
 
     private fun getBatteryIntent(): Intent? {
@@ -226,6 +245,7 @@ class BatteryGuardService : Service() {
         importance = NotificationManager.IMPORTANCE_HIGH
         channel = NotificationChannel(HIGHIMPORTANCECHANNELID, name, importance)
         channel.description = descriptionText
+        channel.setBypassDnd(true)
         // Register the channel with the system
         notificationManager.createNotificationChannel(channel)
     }
@@ -261,9 +281,10 @@ class BatteryGuardService : Service() {
             .setTicker(title)
             .setContentTitle(title)
             .setContentText(contentText)
-            .setSmallIcon(R.mipmap.ic_launcher_foreground)
+            .setSmallIcon(android.R.drawable.stat_sys_warning)
             .setContentIntent(startAppIntent)
             .setSound(sound)
+            .setOnlyAlertOnce(true)
             .build()
         notificationManager.notify(titleRes, notification)
     }

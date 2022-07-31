@@ -12,7 +12,7 @@ abstract class Dao(val db: DB) {
     @Insert
     abstract fun insert(event: Event): Long
 
-    @Query("select level from event group by ts having max(ts)")
+    @Query("select remaining from event group by ts having max(ts)")
     abstract fun getBatteryLevel(): Long
 
     @Query("Select * from event order by ts")

@@ -76,8 +76,8 @@ public class BatteryGuardConverter extends MyConverter {
             return null;
         }
         int time = (int) (value / 1000);
-        int minutes = (int) (time / 60);
-        int seconds = (int) (time % 60);
+        int minutes = time / 60;
+        int seconds = time % 60;
         return String.format(Locale.getDefault(), "%1d min,%2d sec", minutes, seconds);
     }
 
@@ -86,7 +86,7 @@ public class BatteryGuardConverter extends MyConverter {
     }
 
     public static String convertTemperatur(int value) {
-        return ((Float) (value / 10f)).toString();
+        return (Float) (value / 10f) + "\u00B0";
     }
 
     public static String convertVolt(@NonNull Integer value) {
