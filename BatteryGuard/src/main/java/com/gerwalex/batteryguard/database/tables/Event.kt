@@ -235,4 +235,58 @@ class Event : ObservableTableRow {
                 "now_current=$now_current, chargeTimeRemaining=$chargeTimeRemaining, temperature=$temperature, " +
                 "voltage=$voltage, technology=$technology, health=$health, battery_low=$battery_low, remaining_nanowatt=$remaining_nanowatt)"
     }
+
+    fun isEqual(other: Event?): Boolean {
+        if (this === other) return true
+        if (status != other?.status) return false
+        if (plugged != other.plugged) return false
+        if (remaining != other.remaining) return false
+        if (avg_current != other.avg_current) return false
+        if (now_current != other.now_current) return false
+        if (chargeTimeRemaining != other.chargeTimeRemaining) return false
+        if (temperature != other.temperature) return false
+        if (voltage != other.voltage) return false
+        if (health != other.health) return false
+        if (battery_low != other.battery_low) return false
+        if (remaining_nanowatt != other.remaining_nanowatt) return false
+        return true
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        if (!super.equals(other)) return false
+
+        other as Event
+
+        if (status != other.status) return false
+        if (plugged != other.plugged) return false
+        if (remaining != other.remaining) return false
+        if (avg_current != other.avg_current) return false
+        if (now_current != other.now_current) return false
+        if (chargeTimeRemaining != other.chargeTimeRemaining) return false
+        if (temperature != other.temperature) return false
+        if (voltage != other.voltage) return false
+        if (health != other.health) return false
+        if (battery_low != other.battery_low) return false
+        if (remaining_nanowatt != other.remaining_nanowatt) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + status.hashCode()
+        result = 31 * result + plugged.hashCode()
+        result = 31 * result + remaining
+        result = 31 * result + avg_current
+        result = 31 * result + now_current
+        result = 31 * result + chargeTimeRemaining.hashCode()
+        result = 31 * result + temperature
+        result = 31 * result + voltage
+        result = 31 * result + health.hashCode()
+        result = 31 * result + battery_low.hashCode()
+        result = 31 * result + remaining_nanowatt.hashCode()
+        return result
+    }
 }

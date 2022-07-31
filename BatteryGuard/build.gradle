@@ -64,4 +64,11 @@ dependencies {
 //Charts
     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
 
+    // RingtonePicker
+    implementation 'xyz.aprildown:UltimateRingtonePicker:3.1.0'
+
+
+    //FastScroller
+    implementation 'com.simplecityapps:recyclerview-fastscroll:2.0.1'
+
 }

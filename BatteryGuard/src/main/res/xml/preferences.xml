@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory android:title="@string/sounds">
-        <SwitchPreference
-            android:defaultValue="false"
-            android:key="@string/pkNotificationsOn"
-            android:summary="@string/notificationsOnDesc"
-            android:title="@string/notificationsOn" />
+    <PreferenceCategory android:title="@string/vibration">
         <SwitchPreference
             android:defaultValue="false"
             android:key="@string/pkVibrationOn"
@@ -14,75 +9,92 @@
             android:title="@string/vibrationOn" />
     </PreferenceCategory>
     <PreferenceCategory
-        android:dependency="@string/pkNotificationsOn"
         android:summary="@string/chargingDesc"
-        android:title="@string/chargingSounds"
-        app:allowDividerBelow="true">
+        android:title="@string/chargingSounds">
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pkNotificationsOn"
-            android:key="@string/pkPlugInSound"
-            android:summary="@string/noSoundFile"
+            android:key="@string/pkPlugInNotification"
+            android:summary="@string/plugInSoundDesc"
             android:title="@string/plugInSound" />
+        <com.gerwalex.batteryguard.preferences.RingTonePreference
+            android:dependency="@string/pkPlugInNotification"
+            android:key="@string/pkPlugInSoundFile"
+            android:summary="@string/plugInSoundFileDesc"
+            android:title="@string/plugInSoundFile"
+            app:allowDividerBelow="true" />
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pkNotificationsOn"
-            android:key="@string/pkPlugOutSound"
-            android:summary="@string/noSoundFile"
-            android:title="@string/plugOutSound" />
+            android:key="@string/pkPlugOutNotification"
+            android:summary="@string/plugOutSoundDesc"
+            android:title="@string/plugOutSound"
+            app:allowDividerAbove="true" />
+        <com.gerwalex.batteryguard.preferences.RingTonePreference
+            android:dependency="@string/pkPlugOutNotification"
+            android:key="@string/pkPlugOutSoundFile"
+            android:summary="@string/plugOutSoundFileDesc"
+            android:title="@string/plugOutSoundFile" />
     </PreferenceCategory>
-    <PreferenceCategory
-        android:title="@string/lowChargePreference"
-        app:allowDividerAbove="true"
-        app:allowDividerBelow="true">
+    <PreferenceCategory android:title="@string/lowChargePreference">
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pkNotificationsOn"
-            android:key="@string/pkLowChargeSound"
-            android:summary="@string/noSoundFile"
-            android:title="@string/soundfilename" />
-        <com.gerwalex.batteryguard.preferences.TextViewPreference
+            android:key="@string/pkLowChargeNotification"
+            android:summary="@string/lowChargeSoundDesc"
+            android:title="@string/lowChargeSound" />
+        <com.gerwalex.batteryguard.preferences.RingTonePreference
+            android:dependency="@string/pkLowChargeNotification"
+            android:key="@string/pkLowChargeSoundFile"
+            android:summary="@string/lowChargeSoundFileDesc"
+            android:title="@string/lowChargeSoundFile" />
+        <SeekBarPreference
             android:defaultValue="false"
-            android:dependency="@string/pkLowChargeSound"
+            android:dependency="@string/pkLowChargeNotification"
             android:key="@string/pkLowChargeSoundPercent"
+            android:max="40"
             android:summary="@string/lowChargeSoundPercentDesc"
             android:title="@string/lowChargeSoundPercent"
-            app:preferencetext="20%" />
+            app:defaultValue="20"
+            app:min="10"
+            app:showSeekBarValue="true" />
     </PreferenceCategory>
-    <PreferenceCategory
-        android:title="@string/highChargePreference"
-        app:allowDividerAbove="true"
-        app:allowDividerBelow="true">
+    <PreferenceCategory android:title="@string/optimalChargePreference">
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pkNotificationsOn"
-            android:key="@string/pkHighChargeSound"
-            android:summary="@string/noSoundFile"
-            android:title="@string/soundfilename" />
-        <com.gerwalex.batteryguard.preferences.TextViewPreference
-            android:defaultValue="false"
-            android:dependency="@string/pkHighChargeSound"
+            android:key="@string/pkHighChargeNotification"
+            android:summary="@string/highChargeSoundDesc"
+            android:title="@string/highChargeSound" />
+        <com.gerwalex.batteryguard.preferences.RingTonePreference
+            android:dependency="@string/pkHighChargeNotification"
+            android:key="@string/pkHighChargeSoundFile"
+            android:summary="@string/highChargeSoundFileDesc"
+            android:title="@string/highChargeSoundFile" />
+        <SeekBarPreference
+            android:defaultValue="80"
+            android:dependency="@string/pkHighChargeNotification"
             android:key="@string/pkHighChargeSoundPercent"
+            android:max="100"
             android:summary="@string/highChargeSoundPercentDesc"
             android:title="@string/highChargeSoundPercent"
-            app:preferencetext="80%" />
+            app:showSeekBarValue="true" />
     </PreferenceCategory>
-    <PreferenceCategory
-        android:title="@string/highTemperaturePreference"
-        app:allowDividerAbove="true"
-        app:allowDividerBelow="true">
+    <PreferenceCategory android:title="@string/highTemperaturPreference">
         <SwitchPreference
             android:defaultValue="false"
-            android:dependency="@string/pkNotificationsOn"
-            android:key="@string/pkHighTemperatureSound"
-            android:summary="@string/noSoundFile"
-            android:title="@string/soundfilename" />
-        <com.gerwalex.batteryguard.preferences.TextViewPreference
-            android:defaultValue="false"
-            android:dependency="@string/pkHighTemperatureSound"
+            android:key="@string/pkHighTemperatureNotification"
+            android:summary="@string/highTemperatureSoundDesc"
+            android:title="@string/highTemperatureSound" />
+        <com.gerwalex.batteryguard.preferences.RingTonePreference
+            android:dependency="@string/pkHighTemperatureNotification"
+            android:key="@string/pkHighTemperatureSoundFile"
+            android:summary="@string/highTemperatureSoundFileDesc"
+            android:title="@string/highTemperatureSoundFile" />
+        <SeekBarPreference
+            android:defaultValue="35"
+            android:dependency="@string/pkHighTemperatureNotification"
             android:key="@string/pkHighTemperature"
+            android:max="40"
             android:summary="@string/highTemperatureDesc"
             android:title="@string/highTemperature"
-            app:preferencetext="35" />
+            app:min="25"
+            app:showSeekBarValue="true" />
     </PreferenceCategory>
 </PreferenceScreen>

@@ -8,10 +8,13 @@
     <string name="dbname">battery.db</string>
     <string name="widget_text">Text des Widget</string>
     <string name="appwidget_description">Widget Description</string>
-    <string name="notification_channel_id">CHannelID</string>
+    <string name="notification_low_importance_channel_id">Low Importance Channel ID</string>
+    <string name="notification_high_importance_channel_id">High Importance Channel ID</string>
     <string name="notification_title">Battery Guard aktiv</string>
-    <string name="channel_name">BatteryGuardChannelName</string>
-    <string name="channel_description">ChannelDescription</string>
+    <string name="low_importance_channel_name">BatteryGuardChannelName (Niedrige Priorität)</string>
+    <string name="low_importance_channel_description">BatteryGuardChannelDescription (Niedrige Priorität)</string>
+    <string name="high_importance_channel_name">BatteryGuardChannelName (Hohe Priorität)</string>
+    <string name="high_importance_channel_description">BatteryGuardChannelDescription (Hohe Priorität)</string>
     <string name="observeBatteryProgress">Status: %1$s (%2$.0f\%%)</string>
     <string name="chargeState">Ladezustand</string>
     <string name="temperatur">Temperatur</string>
@@ -39,16 +42,16 @@
     <string name="lowChargePreference">Niedrige Akkuladung</string>
     <string name="highChargeSound">Ton bei Erreichen optimaler Akkuladung</string>
     <string name="sounds">Hinweistöne und Alarme</string>
-    <string name="pkPlugInSound">pkPlugInSound</string>
+    <string name="pkPlugInNotification">pkPlugInSound</string>
     <string name="plugInSoundDesc">Hinweiston beim Beginn des Aufladens: %1s</string>
-    <string name="pkPlugOutSound">pkPlugOutSound</string>
+    <string name="pkPlugOutNotification">pkPlugOutSound</string>
     <string name="plugOutSoundDesc">Hinweiston beim Ende des Aufladens: %1s</string>
-    <string name="pkHighTemperatureSound">pkHighTemperatureSound</string>
+    <string name="pkHighTemperatureNotification">pkHighTemperatureSound</string>
     <string name="highTemperatureSoundDesc">Hinweiston wenn die Temperatur des Akkus den Wert von %1d%%
         überschreitet: %2s </string>
     <string name="chargingSounds">Ladekabel</string>
     <string name="chargingDesc">Benachrichtigung beim Anstecken oder Abziehen des Ladekabels.</string>
-    <string name="pkLowChargeSound">pkLowChargeSound</string>
+    <string name="pkLowChargeNotification">pkLowChargeSound</string>
     <string name="alarmTemperaturSounds">Temperatur des Akku</string>
     <string name="highTemperaturDesc">Einstelungen, wenn die Temperatur des Akku einen bestimmten Wert überschreitet</string>
     <string name="alarmChargeLevel">Ladestand</string>
@@ -57,7 +60,7 @@
     <string name="lowChargeSoundDesc">Hinweiston bei niedriger Akkuladung</string>
     <string name="soundfilename">Benachrichtigungston</string>
     <string name="pkLowChargeSoundFile">pkLowChargeSoundFile</string>
-    <string name="pkHighChargeSound">pkOptimalChargeSound</string>
+    <string name="pkHighChargeNotification">pkOptimalChargeSound</string>
     <string name="pkOptimalChargeSoundFile">pkOptimalChargeSoundFile</string>
     <string name="optimalChargeSoundDesc">Es wird empfohlen, den Akku nicht vollständig aufzuladen, sondern nur bis etwa 85 oder 85 Prozent. </string>
     <string name="settings">Einstellungen</string>
@@ -90,5 +93,19 @@
     <string name="lowChargeSound">Ton bei Erreichen niedriger Akkuladun</string>
     <string name="notificationsNotAllowed">Benachrichtigungen sind nicht erlaubt.</string>
     <string name="change">Ändern</string>
-
+    <string name="lowChargeSoundFileDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="lowChargeSoundFile">LowChargeSound</string>
+    <string name="highChargeSoundDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="highChargeSoundFileDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="pkHighChargeSoundFile">pkHighChargeSoundFile</string>
+    <string name="highChargeSoundFile">highChargeSoundFile</string>
+    <string name="pkHighTemperatureSoundFile">pkHighTemperatureSoundFile</string>
+    <string name="highTemperatureSoundFile">highTemperatureSoundFile</string>
+    <string name="highTemperatureSoundFileDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diamnonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="plugOutSoundFile">plugOutSoundFile</string>
+    <string name="plugInSoundFile">plugInSoundFile</string>
+    <string name="plugInSoundFileDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diamnonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="plugOutSoundFileDesc">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diamnonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua</string>
+    <string name="optimalChargePreference">Optimale Akkuladung</string>
+    <string name="highTemperaturPreference">Hohe Akkutemperatur</string>
 </resources>
